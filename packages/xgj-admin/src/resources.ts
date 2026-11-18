@@ -17,7 +17,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
-export const DRAFTS_DIR = path.join(ROOT, 'drafts');
+/** 草稿目录：默认仓库根 drafts/；可用 XGJ_DRAFTS_DIR 覆盖（部署/演示/测试指向挂载卷或临时目录） */
+export const DRAFTS_DIR = process.env.XGJ_DRAFTS_DIR
+  ? path.resolve(process.env.XGJ_DRAFTS_DIR)
+  : path.join(ROOT, 'drafts');
 const RESOURCES_FILE = path.join(DRAFTS_DIR, '.resources.json');
 
 /** 网盘一侧的状态 */

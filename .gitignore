@@ -50,3 +50,6 @@ assets/
 out/
 docs/虚拟货源自动发货-接入手册.html
 netdisk-site/media/
+
+# 任务 #4 的脱敏取证（只留本地，绝不入库）
+.artifacts/
