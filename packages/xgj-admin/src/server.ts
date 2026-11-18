@@ -55,6 +55,7 @@ import { specFor } from './card-spec';
 import { uploadImage, mediaReady, pingMedia } from './media';
 import { validateDraft, normalizeDraft, type ProductDraft } from '../../goofish-adapter/src/draft';
 import { deliverySnapshot, deliveryPreflight, type ConsignFacts } from './delivery';
+import { generateDeliveryPlan, savePlan, listPlans, loadPlan } from './delivery-plan';
 import { runListingAction, XgjWriteError } from '../../goofish-adapter/src/listing';
 import { getProduct } from '../../goofish-adapter/src/api';
 import {
@@ -1172,6 +1173,51 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname.startsWith('/api/delivery/preflight/')) {
       const goodsNo = decodeURIComponent(url.pathname.slice('/api/delivery/preflight/'.length));
       sendJson(res, 200, deliveryPreflight(goodsNo));
+      return;
+    }
+
+    /* ---------- 配置方案（只生成本地计划，不写线上）----------
+     * 设计：PREVIEW 与 SAVE 都由**服务端重新生成**，不接受客户端回传的 plan 内容，
+     * 避免“前端改字段 → 后端拿假数据落盘”的信任问题。
+     * body: { shop?: string|null, codes?: string[]|null }
+     */
+    if (req.method === 'POST' && url.pathname === '/api/delivery/plan/preview') {
+      const raw = await readBody(req);
+      let body: any = {};
+      try { body = raw ? JSON.parse(raw) : {}; } catch { sendJson(res, 400, fail('请求体不是合法 JSON')); return; }
+      const scope = {
+        shop: typeof body?.shop === 'string' && body.shop ? String(body.shop) : null,
+        codes: Array.isArray(body?.codes) ? body.codes.map((c: unknown) => String(c)).filter(Boolean) : null,
+      };
+      sendJson(res, 200, { ok: true, plan: generateDeliveryPlan(scope, loadConsignFacts()) });
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/delivery/plan/save') {
+      const raw = await readBody(req);
+      let body: any = {};
+      try { body = raw ? JSON.parse(raw) : {}; } catch { sendJson(res, 400, fail('请求体不是合法 JSON')); return; }
+      // 保存前要求显式确认：confirm === true；否则拒绝（防误触）
+      if (body?.confirm !== true) { sendJson(res, 409, fail('保存计划需要显式确认（confirm: true）')); return; }
+      const scope = {
+        shop: typeof body?.shop === 'string' && body.shop ? String(body.shop) : null,
+        codes: Array.isArray(body?.codes) ? body.codes.map((c: unknown) => String(c)).filter(Boolean) : null,
+      };
+      const plan = generateDeliveryPlan(scope, loadConsignFacts());
+      const saved = savePlan(plan);
+      sendJson(res, saved.ok ? 200 : 409, saved.ok ? { ...saved, plan } : saved);
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/delivery/plans') {
+      sendJson(res, 200, { ok: true, plans: listPlans() });
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname.startsWith('/api/delivery/plans/')) {
+      const id = decodeURIComponent(url.pathname.slice('/api/delivery/plans/'.length));
+      const plan = loadPlan(id);
+      sendJson(res, plan ? 200 : 404, plan ? { ok: true, plan } : fail(`计划不存在：${id}`));
       return;
     }
 

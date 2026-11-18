@@ -531,6 +531,7 @@ details .inner{padding:6px 0}
       <h2>商品 <span class="cnt" id="dlGoodsCnt"></span>
         <span style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn" onclick="loadDelivery(true)">刷新</button>
+          <button class="btn primary" onclick="openPlanBuilder()">生成配置方案</button>
         </span>
       </h2>
       <div class="qsearch">
@@ -560,6 +561,11 @@ details .inner{padding:6px 0}
       <h2>卡点候选 <span class="cnt" id="dlCandCnt"></span></h2>
       <div class="card" id="dlCandBox"></div>
 
+      <h2>已保存的配置方案 <span class="cnt" id="dlPlansCnt"></span>
+        <span style="margin-left:auto"><button class="btn" onclick="loadPlans()">刷新</button></span>
+      </h2>
+      <div class="card" id="dlPlansBox"></div>
+
       <details style="margin-top:14px"><summary>取数错误 / 数据缺口（如实列出）</summary>
         <div class="card" id="dlErrors" style="margin-top:8px"></div>
       </details>
@@ -583,6 +589,8 @@ let DL_SHOP = '';
 let DL_SEARCH = '';
 let DL_STATUS = '';
 let DL_CONSIGN = '';
+/** 当前预览中的方案作用域（确认保存时用同一份） */
+let PLAN_SCOPE = null;
 /** 类别筛选：'' = 全部 ｜ '__none__' = 未分类 ｜ 其他 = 类别 id */
 let CAT_FILTER = '';
 /** 队列/资源列表的搜索与状态筛选（742 个条目没有搜索根本没法操作） */
@@ -697,6 +705,7 @@ function switchView(v) {
   if (v === 'preflight') { renderPreflight(); loadBannedWords(); }
   if (v === 'publish') startGuardTicker();
   if (v === 'delivery' && !DL) loadDelivery(false);
+  if (v === 'delivery') loadPlans();
   // 同步到 hash（用 replaceState，避免触发 hashchange 递归）
   try { if (location.hash !== '#' + v) history.replaceState(null, '', '#' + v); } catch (e) { /* file:// 下忽略 */ }
 }
@@ -2066,6 +2075,200 @@ async function dlPreflight(goodsNo) {
 }
 
 let BANNED = null;
+
+/* ============================================================
+   【配置方案】在「发货排查」页内：生成 → 审阅 → 确认/取消 → 回看
+   全部只生成本地文件（out/delivery-plans/），不调用任何线上写接口。
+   ============================================================ */
+
+/** 当前筛选命中的商品编号（方案作用域可以直接用它们） */
+function dlFilteredCodes() {
+  return dlFiltered().map((g) => g.goods_no);
+}
+
+function openPlanBuilder() {
+  if (!DL) return;
+  const shops = (DL.shops || []);
+  const codes = dlFilteredCodes();
+  const scopeDesc = (DL_SHOP || DL_SEARCH || DL_STATUS || DL_CONSIGN)
+    ? `当前筛选命中 ${codes.length} 个商品（可在下一步收窄）`
+    : `全部 ${codes.length} 个商品`;
+  openModal(`<div class="modal-hd"><h3>生成配置方案</h3>
+    <span class="acts"><button class="btn tiny" onclick="closeModal()">关闭</button></span></div>
+    <div class="modal-bd">
+      <div class="issue i-info"><b>只生成、不写入。</b>确认后仅保存到本地 <code>out/delivery-plans/</code>；
+        线上应用（consign/save / kami 绑定 / dummy/send）需另行授权，本页不接写接口。</div>
+      <div class="field" style="margin-top:14px">
+        <label>店铺范围</label>
+        <select id="planShop" style="width:100%;max-width:420px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--t1)">
+          <option value="">全部店铺（按当前筛选）</option>
+          ${shops.map((s) => `<option value="${esc(s.user_name)}" ${DL_SHOP === s.user_name ? 'selected' : ''}>${esc(s.label)}（${esc(s.user_name)}）</option>`).join('')}
+        </select>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label>商品范围</label>
+        <div class="muted" style="font-size:12.5px">${esc(scopeDesc)}</div>
+        <textarea id="planCodes" placeholder="可选：粘贴 goods_no 列表（逗号/换行分隔）；留空 = 按上面店铺范围全部"
+          style="width:100%;min-height:74px;margin-top:8px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px"></textarea>
+      </div>
+      <div class="acts" style="margin-top:18px">
+        <button class="btn primary" onclick="previewPlan()">生成预览（只读）</button>
+        <button class="btn" onclick="closeModal()">取消</button>
+      </div>
+    </div>`);
+}
+
+function parsePlanCodes() {
+  const el = document.getElementById('planCodes');
+  const raw = (el && el.value || '').trim();
+  if (!raw) return null;
+  return raw.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean);
+}
+
+async function previewPlan() {
+  const shopEl = document.getElementById('planShop');
+  const shop = shopEl && shopEl.value ? shopEl.value : null;
+  const codes = parsePlanCodes();
+  try {
+    const j = await fetch('/api/delivery/plan/preview', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shop, codes }),
+    }).then((r) => r.json());
+    if (!j || !j.ok) { toast((j && j.error) || '生成失败', true); return; }
+    PLAN_SCOPE = { shop, codes };
+    renderPlanModal(j.plan);
+  } catch (e) {
+    toast('生成失败：' + (e.message || e), true);
+  }
+}
+
+function planEvidencePill(ev) {
+  const cb = ev.gatewayCallback === 'proven' ? '<span class="pill p-ok">回调已证实</span>'
+    : ev.gatewayCallback === 'unproven' ? '<span class="pill p-pend">有单未出卡</span>'
+      : '<span class="pill p-off">无订单记录</span>';
+  const ob = ev.onlineBinding === 'verified' ? '<span class="pill p-ok">绑定已核实</span>'
+    : '<span class="pill p-pend">绑定未证实</span>';
+  return cb + ' ' + ob;
+}
+
+function renderPlanModal(plan) {
+  const rows = plan.targets.map((t) => {
+    const issues = t.issues.filter((i) => i.level !== 'info');
+    const issueHtml = issues.length
+      ? issues.map((i) => `<div class="issue i-${i.level === 'blocker' ? 'blocker' : 'warn'}" style="margin:4px 0;padding:6px 10px;font-size:12px">
+          <b>${esc(i.field)}</b> ${esc(i.message)}</div>`).join('')
+      : '<span class="muted" style="font-size:12px">无阻塞项</span>';
+    return `<tr>
+      <td><div class="gno">${esc(t.goods_no)}</div><div class="muted" style="font-size:11px">${esc(t.goods_name)}</div></td>
+      <td>${esc(dlShopLabel(t.shop))}</td>
+      <td>${t.status === 'ready' ? '<span class="pill p-ok">可备</span>' : '<span class="pill p-fail">有阻塞</span>'}</td>
+      <td>${planEvidencePill(t.evidence)}</td>
+      <td>${issueHtml}</td>
+    </tr>`;
+  }).join('');
+
+  const fieldsOf = (t) => t.fields.map((f) => `<div style="display:flex;gap:8px;font-size:12px;padding:3px 0">
+      <span class="gno">${esc(f.field)}</span>
+      <span class="muted">当前 ${esc(f.current)}</span> <span style="color:var(--accent)">→</span>
+      <span>拟改 ${esc(f.proposed)}</span>
+      <span class="muted">（${esc(f.source === 'authoritative' ? '已核实' : f.source === 'unknown' ? '待核' : '拟设')}）</span>
+    </div>`).join('') + `<div class="muted" style="font-size:11px">${esc(t.evidence.note)}</div>`;
+
+  openModal(`<div class="modal-hd"><h3>配置方案预览</h3>
+    <span class="acts"><span class="muted" style="font-size:12px">${esc((plan.generatedAt || '').slice(0, 19).replace('T', ' '))}</span>
+    <button class="btn tiny" onclick="closeModal()">关闭</button></span></div>
+    <div class="modal-bd">
+      <div class="issue i-info"><b>${plan.summary.total} 个目标（${plan.summary.ready} 可备 / ${plan.summary.blocked} 有阻塞）</b>
+        ${esc(plan.disclaimer)}</div>
+      <div style="max-height:52vh;overflow:auto;margin-top:12px">
+        <table>
+          <thead><tr><th>商品</th><th>店铺</th><th>状态</th><th>证据</th><th>风险</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="5" class="muted">作用域内没有商品</td></tr>'}</tbody>
+        </table>
+      </div>
+      <details style="margin-top:12px"><summary>逐商品拟改字段</summary>
+        <div style="max-height:32vh;overflow:auto;padding:8px 0">
+          ${plan.targets.map((t) => `<div style="margin-bottom:10px;padding:8px;border:1px solid var(--line);border-radius:8px">
+            <b class="gno">${esc(t.goods_no)}</b>${fieldsOf(t)}</div>`).join('')}
+        </div>
+      </details>
+      <div class="acts" style="margin-top:18px">
+        <button class="btn primary" onclick="confirmSavePlan()">确认并保存本地计划</button>
+        <button class="btn" onclick="closeModal()">取消</button>
+      </div>
+    </div>`);
+}
+
+async function confirmSavePlan() {
+  const scope = PLAN_SCOPE || {};
+  try {
+    const j = await fetch('/api/delivery/plan/save', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...scope, confirm: true }),
+    }).then((r) => r.json());
+    if (!j || !j.ok) { toast((j && j.error) || '保存失败', true); return; }
+    closeModal();
+    toast('已保存本地计划：' + j.id);
+    loadPlans();
+  } catch (e) {
+    toast('保存失败：' + (e.message || e), true);
+  }
+}
+
+async function loadPlans() {
+  const box = document.getElementById('dlPlansBox');
+  if (!box) return;
+  try {
+    const j = await fetch('/api/delivery/plans', { cache: 'no-store' }).then((r) => r.json());
+    const plans = (j && j.plans) || [];
+    document.getElementById('dlPlansCnt').textContent = `${plans.length} 份`;
+    box.innerHTML = plans.length
+      ? `<table><thead><tr><th>计划 ID</th><th>生成时间</th><th>作用域</th><th>目标</th><th>状态</th><th>操作</th></tr></thead>
+         <tbody>${plans.map((p) => `<tr>
+           <td><span class="gno" style="font-size:11.5px">${esc(p.id)}</span></td>
+           <td>${esc((p.generatedAt || '').slice(0, 16).replace('T', ' '))}</td>
+           <td>${esc(p.scope.shop ? dlShopLabel(p.scope.shop) : '全部店铺')}${p.scope.codes ? ` · ${p.scope.codes.length} 个指定编号` : ''}</td>
+           <td>${p.summary.total} 个（${p.summary.ready} 可 / ${p.summary.blocked} 阻）</td>
+           <td><span class="pill p-off">仅本地</span></td>
+           <td><button class="btn tiny" onclick="viewPlan('${esc(p.id)}')">回看</button></td>
+         </tr>`).join('')}</tbody></table>`
+      : '<div class="empty">还没有保存过配置方案。点上方「生成配置方案」可以预览并保存一份。</div>';
+  } catch (e) {
+    box.innerHTML = `<div class="empty">加载失败：${esc(e.message || e)}</div>`;
+  }
+}
+
+async function viewPlan(id) {
+  try {
+    const j = await fetch('/api/delivery/plans/' + encodeURIComponent(id), { cache: 'no-store' }).then((r) => r.json());
+    if (!j || !j.ok) { toast((j && j.error) || '计划不存在', true); return; }
+    const plan = j.plan;
+    const rows = plan.targets.map((t) => {
+      const issues = t.issues.filter((i) => i.level !== 'info');
+      return `<tr>
+        <td><div class="gno">${esc(t.goods_no)}</div><div class="muted" style="font-size:11px">${esc(t.goods_name)}</div></td>
+        <td>${esc(dlShopLabel(t.shop))}</td>
+        <td>${t.status === 'ready' ? '<span class="pill p-ok">可备</span>' : '<span class="pill p-fail">有阻塞</span>'}</td>
+        <td>${planEvidencePill(t.evidence)}</td>
+        <td>${issues.length ? issues.map((i) => `${esc(i.field)}:${esc(i.message)}`).join('<br>') : '<span class="muted">—</span>'}</td>
+      </tr>`;
+    }).join('');
+    openModal(`<div class="modal-hd"><h3>计划回看 ${esc(id)}</h3>
+      <span class="acts"><button class="btn tiny" onclick="closeModal()">关闭</button></span></div>
+      <div class="modal-bd">
+        <div class="issue i-info">${esc(plan.disclaimer)}
+          <div class="muted" style="margin-top:4px;font-size:12px">生成时间：${esc((plan.generatedAt || '').slice(0, 19).replace('T', ' '))}（只读回看，未应用任何变更）</div>
+        </div>
+        <div style="max-height:56vh;overflow:auto;margin-top:12px">
+          <table><thead><tr><th>商品</th><th>店铺</th><th>状态</th><th>证据</th><th>风险</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="5" class="muted">目标为空</td></tr>'}</tbody></table>
+        </div>
+      </div>`);
+  } catch (e) {
+    toast('回看失败：' + (e.message || e), true);
+  }
+}
+
 async function loadBannedWords() {
   if (BANNED) return;
   const j = await fetch('/api/banned-words', { cache: 'no-store' }).then((r) => r.json()).catch(() => null);
