@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>闲管家接入与链路打通手册</title>
+<style>
+:root{--bg:#F7F6F3;--card:#FFF;--line:#E4E2DC;--t1:#1E1E1C;--t2:#5F5E5A;--t3:#8A8880;
+--red:#A32D2D;--red-bg:#FCEBEB;--amber:#854F0B;--amber-bg:#FAEEDA;--green:#3B6D11;--green-bg:#EAF3DE;
+--blue:#185FA5;--blue-bg:#E6F1FB;--gray-bg:#F1EFE8;--coral:#993C1D;--coral-bg:#FAECE7;--purple:#534AB7;--purple-bg:#EEEDFE}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);font:15px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+.wrap{max-width:1020px;margin:0 auto;padding:48px 28px 96px}
+header{border-bottom:3px solid var(--t1);padding-bottom:24px;margin-bottom:36px}
+h1{font-size:29px;margin:0 0 10px;font-weight:600;line-height:1.3}
+.sub{color:var(--t2);margin:0}
+.meta{margin-top:14px;font-size:13px;color:var(--t3);display:flex;gap:18px;flex-wrap:wrap}
+h2{font-size:20px;font-weight:600;margin:50px 0 16px;padding-left:13px;border-left:4px solid var(--t1);line-height:1.3}
+h3{font-size:16px;font-weight:600;margin:28px 0 12px}
+p{margin:12px 0}
+ul,ol{margin:12px 0;padding-left:22px}
+li{margin:6px 0}
+code{background:#EAE8E2;padding:2px 6px;border-radius:4px;font:12.5px/1.5 ui-monospace,Menlo,monospace;word-break:break-all}
+pre{background:#2C2C2A;color:#E8E6E0;padding:15px 18px;border-radius:10px;overflow-x:auto;font:12.5px/1.7 ui-monospace,Menlo,monospace;margin:14px 0}
+pre code{background:none;color:inherit;padding:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:16px 0}
+.card.warn{background:var(--red-bg);border-color:#F09595}
+.card.ok{background:var(--green-bg);border-color:#C0DD97}
+.card.note{background:var(--blue-bg);border-color:#B5D4F4}
+.card.amber{background:var(--amber-bg);border-color:#FAC775}
+.card.hero{background:var(--purple-bg);border-color:#AFA9EC}
+.card h4{margin:0 0 10px;font-size:15px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th{background:var(--gray-bg);text-align:left;padding:10px 13px;font-weight:600;font-size:13px;border-bottom:1px solid var(--line)}
+td{padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--t2)}
+tr:last-child td{border-bottom:none}
+td strong{color:var(--t1)}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.p-red{background:#F7C1C1;color:#791F1F}
+.p-green{background:#C0DD97;color:#27500A}
+.p-amber{background:#FAC775;color:#633806}
+.p-gray{background:#D3D1C7;color:#444441}
+.p-blue{background:#B5D4F4;color:#0C447C}
+.p-purple{background:#CECBF6;color:#3C3489}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+@media(max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.stat .n{font-size:21px;font-weight:600;line-height:1.2}
+.stat .l{font-size:12.5px;color:var(--t2);margin-top:4px}
+.tagline{font-size:13px;color:var(--t3)}
+.step{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.step:last-child{border-bottom:none}
+.step .sn{flex:0 0 30px;height:30px;border-radius:50%;background:var(--t1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.step .sb{flex:1}
+.step .sb b{display:block;font-size:14.5px;margin-bottom:3px}
+.step .sb span{font-size:13.5px;color:var(--t2)}
+.flow{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:18px 0;overflow-x:auto}
+.flow-row{display:flex;align-items:center;gap:10px;margin:10px 0;min-width:720px}
+.node{flex:0 0 auto;padding:9px 14px;border-radius:9px;font-size:13px;font-weight:600;border:1.5px solid}
+.node.bd{background:#E6F1FB;border-color:#85B7EB;color:#0C447C}
+.node.mid{background:#EEEDFE;border-color:#AFA9EC;color:#3C3489}
+.node.gf{background:#FAEEDA;border-color:#EFB100;color:#633806}
+.node.out{background:#EAF3DE;border-color:#97C459;color:#27500A}
+.arrow{color:var(--t3);font-size:16px;flex:0 0 auto}
+.note-inline{font-size:12.5px;color:var(--t3);padding-left:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+<h1>闲管家接入与链路打通手册</h1>
+<p class="sub">把「网盘资源 → 闲管家 → 闲鱼店铺」这条路铺到只剩一次点击</p>
+<div class="meta"><span>2026-10-06</span><span>适配层已编码并通过校验</span><span>阻塞项：闲管家凭证</span></div>
+</header>
+
+<div class="card ok">
+<h4>这一轮做完的事</h4>
+<ol style="margin-bottom:0">
+<li>把闲管家开放平台<b>全部 37 个接口</b>整理成注册表，路径逐条对官方文档核对过。</li>
+<li>写完了适配层：签名、客户端、商品/订单/卡密/售后/推送五大模块，<code>tsc --noEmit</code> 全绿。</li>
+<li><b>签名算法用官方测试向量验过了</b>——<code>genSign()</code> 输出与官方文档给出的期望值一字不差。</li>
+<li>向 <code>open.goofish.pro</code> 发了<b>真实请求</b>，确认接口路径与请求格式被服务端接受。</li>
+<li>做了两个商品草稿：一个是<b>联调测试商品</b>（可直接跑通全链路后删除），一个是从你网盘真实资源生成的<b>可上架范例</b>。</li>
+<li>顺带发现一条<b>能绕开百度付费分享接口</b>的路径——见 §2。</li>
+</ol>
+</div>
+
+<h2>一、先说结论：卡在哪，不卡在哪</h2>
+
+<div class="grid">
+<div class="stat"><div class="n">37</div><div class="l">已注册接口</div></div>
+<div class="stat"><div class="n">✅</div><div class="l">签名算法已对官方向量验证</div></div>
+<div class="stat"><div class="n">✅</div><div class="l">请求格式已被服务端接受</div></div>
+<div class="stat"><div class="n">1</div><div class="l">剩余阻塞项：闲管家凭证</div></div>
+</div>
+
+<table>
+<thead><tr><th>环节</th><th>状态</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>百度网盘读取（扫描/搜索）</td><td><span class="pill p-green">已通</span></td><td>授权已完成，可全盘遍历</td></tr>
+<tr><td>百度网盘写入（移动/改名/删除）</td><td><span class="pill p-green">已通</span></td><td>参数位置问题已破解，见上一份报告 §6</td></tr>
+<tr><td>百度网盘<b>创建分享链接</b></td><td><span class="pill p-red">阻塞</span></td><td><code>errno=13998</code>，需企业认证 + 付费购买 + 申请开通。<b>但有绕行方案（§2）</b></td></tr>
+<tr><td>闲管家签名 / 请求格式</td><td><span class="pill p-green">已验证</span></td><td>对官方向量一致；真实请求被服务端接受</td></tr>
+<tr><td>闲管家适配层代码</td><td><span class="pill p-green">已完成</span></td><td>5 个模块 + 4 个命令，类型检查全绿</td></tr>
+<tr><td>闲管家<b>真实调用</b></td><td><span class="pill p-red">阻塞</span></td><td>凭证尚未取得，见 §5 的三步清单</td></tr>
+<tr><td>服务端推送接收（订单/商品）</td><td><span class="pill p-amber">待部署</span></td><td>验签与解析代码已写好，缺公网 HTTPS 地址</td></tr>
+</tbody>
+</table>
+
+<h2>二、本轮最有价值的发现：阶段一根本不需要分享接口</h2>
+
+<div class="card hero">
+<h4>把「分享」从自动化链路里摘出去，剩下的全部可做</h4>
+<p>之前的方案里，我默认「自动发货 = 下单后实时调 AI 生成分享链接」，于是百度那个付费分享接口变成了 P0 阻塞。这个前提可以改。</p>
+<p style="margin-bottom:0"><b>「创建分享链接」这个动作，人在网盘客户端点一下只要几十秒，而且没有任何次数限制、没有认证门槛、完全免费。</b>接口只是把它自动化而已。<br>
+所以阶段一改成：<b>你手动建一批分享链接 → 灌进闲管家卡密池 → 闲管家原生自动发货。</b>百度 API 一次都不用调。</p>
+</div>
+
+<h3>阶段一链路（今天就能做，零审批依赖）</h3>
+<div class="flow">
+<div class="flow-row">
+<span class="node bd">网盘资源目录</span><span class="arrow">→</span>
+<span class="node out">人工点「分享」<br><span class="note-inline">拿到链接+提取码</span></span><span class="arrow">→</span>
+<span class="node mid">灌入闲管家卡密池<br><span class="note-inline">kami/storage/create</span></span><span class="arrow">→</span>
+<span class="node gf">闲管家原生自动发货</span><span class="arrow">→</span>
+<span class="node out">买家收到链接</span>
+</div>
+</div>
+
+<table>
+<thead><tr><th></th><th>阶段一 · 卡密池预置</th><th>阶段二 · 一单一链</th></tr></thead>
+<tbody>
+<tr><td><b>分享链接怎么来</b></td><td>人工在网盘客户端创建</td><td>下单后调 API 实时生成</td></tr>
+<tr><td><b>百度分享权限</b></td><td><span class="pill p-green">不需要</span></td><td><span class="pill p-red">必需</span>（企业认证+付费+开通）</td></tr>
+<tr><td><b>发货逻辑</b></td><td>闲管家内置，零代码</td><td>自有服务 + 订单推送回调</td></tr>
+<tr><td><b>可否作废单个链接</b></td><td>差（预置的链接是共享的）</td><td>好（每单独立，可精确作废）</td></tr>
+<tr><td><b>能否统计转化</b></td><td>差</td><td>好</td></tr>
+<tr><td><b>人工成本</b></td><td>每上架一个商品约 1 分钟</td><td>0</td></tr>
+<tr><td><b>启动时间</b></td><td><b>拿证当天就能卖</b></td><td>等分享权限批下来</td></tr>
+</tbody>
+</table>
+
+<div class="card note">
+<h4>阶段一的真实代价，得说清楚</h4>
+<p style="margin-bottom:0">预置链接是<b>共享的</b>——所有买家用同一个链接。买家拿到后转手卖给别人，你无法从技术上阻断。应对办法是组合使用：① 用百度网盘的「分享有效期」设为 7 天或 30 天，压住长期扩散；② 定期轮换链接；③ 商品描述里写清"仅供个人使用"。等到阶段二上线，再逐步切到一单一链。</p>
+</div>
+
+<h2>三、签名验证：证据与边界</h2>
+
+<p>签名是整条链路的钥匙。两件事分开验证，我把证据和<b>证据不够的地方</b>都摆出来。</p>
+
+<h3>3.1 算法正确性 —— 对官方测试向量（离线，确凿）</h3>
+
+<p>官方《接入说明》给了一组测试向量，<code>npm run verify:sign</code> 可以直接复现：</p>
+
+<pre><code>输入：
+  appKey    = 203413189371893
+  appSecret = o9wl81dncmvby3ijpq7eur456zhgtaxs
+  timestamp = 1636087298
+  body      = {"product_id":"219530767978565"}
+
+实测输出：
+  bodyMd5 = 2608f2139cca8755cabf25209251e549   ← 与官方期望一致 ✅
+  sign    = c26c8a48809141f3dd80bd9b9ddb41ea   ← 与官方期望一致 ✅</code></pre>
+
+<p>这条证据是<b>确凿的</b>：md5 中间值和最终签名都对得上，说明拼接格式（<code>appKey,bodyMd5,timestamp,appSecret</code>）、压缩 JSON 的处理、字符编码全都正确。</p>
+
+<h3>3.2 请求格式被服务端接受 —— 真实请求</h3>
+
+<p>我用官方文档里公开的示例凭证，向生产网关发了真实请求：</p>
+
+<pre><code>POST https://open.goofish.pro/api/open/user/authorize/list?appid=…&timestamp=…&sign=…
+Content-Type: application/json; charset=utf-8
+body: {}
+
+服务端应答：
+{"code":100001,"msg":"203413189371893:应用不存在或已下线","data":{}}
+
+对照组（故意写错路径）：
+POST https://open.goofish.pro/api/open/__definitely_not_real__
+→ HTTP 404  404 page not found</code></pre>
+
+<p>对照很关键：<b>路径对 → 返回 JSON 业务错误；路径错 → 返回 404 纯文本</b>。所以能确认：接口路径正确、<code>appid</code> 参数被正确读取、POST + JSON 请求体被接受。</p>
+
+<div class="card warn">
+<h4>⚠️ 我原本要下的一个错误结论，被对照实验推翻了</h4>
+<p>看到 <code>code=100001</code>（而不是 <code>401 签名错误</code>）时，我一度以为「签名被服务端接受了」。于是补做了对照实验：<b>完全不带 sign、sign 传垃圾值</b>——结果返回的是<b>一模一样</b>的 100001。</p>
+<p style="margin-bottom:0">这说明服务端的校验顺序是「<b>先查 AppID，再验签名</b>」。应用不存在时服务端拿不到 appSecret，根本无从验签。<br>
+所以这条证据<b>只能证明请求格式与路径正确，不能证明签名被接受</b>。签名的可靠性目前由 §3.1 的官方向量自检保证；<b>真实的线上验签，要等填上你的 appKey 才能确认</b>——这也是 <code>gf:ping</code> 的设计意图：凭证一到手，第一件事就是验它。</p>
+</div>
+
+<h2>四、现在就能跑的命令</h2>
+
+<table>
+<thead><tr><th>命令</th><th>作用</th><th>要不要凭证</th></tr></thead>
+<tbody>
+<tr><td><code>npm run verify:sign</code></td><td>签名算法对官方向量自检</td><td><span class="pill p-green">不要</span></td></tr>
+<tr><td><code>npm run gf:preview</code></td><td>校验 drafts/ 下所有草稿，列出阻塞项，打印将发送的真实请求</td><td><span class="pill p-green">不要</span></td></tr>
+<tr><td><code>npm run gf:ping -- --demo</code></td><td>用官方示例凭证跑连通性探针，验证网络与接口路径</td><td><span class="pill p-green">不要</span></td></tr>
+<tr><td><code>npm run gf:ping</code></td><td>真实凭证下验证签名 / IP 白名单 / 应用上线状态，并列出店铺</td><td><span class="pill p-amber">需要</span></td></tr>
+<tr><td><code>npm run gf:categories -- 2 99</code></td><td>查闲鱼类目，拿 <code>channel_cat_id</code> 回填草稿</td><td><span class="pill p-amber">需要</span></td></tr>
+<tr><td><code>npm run gf:categories -- 2 99 &lt;catId&gt;</code></td><td>查该类目的必填属性，生成 <code>channel_pv</code> 骨架</td><td><span class="pill p-amber">需要</span></td></tr>
+<tr><td><code>GOOFISH_LIVE=true npm run gf:publish -- 00-联调测试 --live</code></td><td>真实创建 + 上架</td><td><span class="pill p-red">需要</span></td></tr>
+<tr><td><code>GOOFISH_PRODUCT_ID=&lt;id&gt; npm run gf:publish -- 00-联调测试 --delete --live</code></td><td>联调后清理商品</td><td><span class="pill p-red">需要</span></td></tr>
+</tbody>
+</table>
+
+<p>任意时刻不加 <code>--live</code> 都是 dry-run，只打印请求不发送。加上 <code>.env</code> 里的 <code>GOOFISH_LIVE=false</code> 默认值，等于<b>两道闸门</b>——两道都打开才会真的写。</p>
+
+<h2>五、打通全链路：你需要做的三步</h2>
+
+<div class="card amber">
+<h4>前置条件（一次性，约 1 个工作日）</h4>
+<p style="margin-bottom:0">闲管家的接入条件比较硬：<b>注册闲管家账号 → 绑定闲鱼店铺 → 店铺具备鱼小铺资质 → 订购开放平台版本（ERP 专业版或铂金版）→ 在「我的应用」创建<b>进销存类型</b>应用 → 填 IP 白名单 → 应用<b>上线</b></b>。<br>
+注意两点：① 高级版<b>不能</b>创建应用，必须专业版或铂金版；② 应用类型必须是「进销存」，否则接口一律报「应用不存在或已下线」。</p>
+</div>
+
+<div class="step"><div class="sn">1</div><div class="sb">
+<b>把凭证给我</b>
+<span>在闲管家「我的应用」页复制 AppKey 与 AppSecret。另外告诉我你的<b>闲鱼会员名</b>（上架目标店铺），以及<b>当前出口公网 IP</b>——本机若挂着代理，出口 IP 是代理服务器的，不是宽带的，这个坑我在地图上标了。</span>
+</div></div>
+
+<div class="step"><div class="sn">2</div><div class="sb">
+<b>我跑探针，把三件事一次验完</b>
+<span><code>npm run gf:ping</code> 会依次确认签名是否被接受、IP 是否在白名单、应用是否上线。失败会给出对应的排查清单（401 查什么、403 查什么、100001 查什么）。</span>
+</div></div>
+
+<div class="step"><div class="sn">3</div><div class="sb">
+<b>查类目 → 回填 → 上架</b>
+<span><code>gf:categories</code> 拿到类目 ID 与必填属性，填进 <code>drafts/00-联调测试.json</code>，然后 <code>gf:publish --live</code>。这条测试商品价格故意定成 999 元、库存 1 件，验证完立即删除。</span>
+</div></div>
+
+<h3>5.1 联调测试商品长什么样</h3>
+
+<p>这是为了「跑通线路」专门做的，不涉及任何版权问题：</p>
+
+<pre><code>标题：  【接口联调专用】请勿购买 自动化链路测试商品
+价格：  ¥999.00（单位是「分」，写 99900）  库存：1
+图片：  3 张占位图（placehold.co，已实测公网可访问）
+描述：  说明这是链路验证商品，验证完成后删除
+
+创建请求体（压缩 JSON，即签名所用原文）：
+{"item_biz_type":2,"sp_biz_type":99,"channel_cat_id":"<类目ID>","channel_pv":[],
+ "price":99900,"express_fee":0,"stock":1,"stuff_status":100,"outer_id":"TEST-CONN-001",
+ "publish_shop":[{"user_name":"<你的闲鱼会员名>","province":110000,"city":110100,
+ "district":110101,"title":"...","content":"...","images":["...","...","..."]}]}</code></pre>
+
+<p>它还带了一份 <code>drafts/10-Procreate室内设计笔刷.json</code>，是从你网盘里的真实资源生成的<b>可上架范例</b>——商品文案直接从目录结构反推卖点。但它的 <code>compliance.clean</code> 我设成了 <code>false</code>，因为那个目录里有他人淘宝店的书签、版权来源不明。这样它会被硬闸门挡住，正好演示闸门怎么起作用。</p>
+
+<h2>六、接口全景（37 个，路径已逐条核对）</h2>
+
+<table>
+<thead><tr><th>模块</th><th>接口</th><th>路径</th></tr></thead>
+<tbody>
+<tr><td rowspan="2"><b>用户</b></td><td>查询闲鱼店铺</td><td><code>/api/open/user/authorize/list</code></td></tr>
+<tr><td>查询商家地址</td><td><code>/api/open/user/address/list</code></td></tr>
+<tr><td rowspan="12"><b>商品</b></td><td>查询商品类目</td><td><code>/api/open/product/category/list</code></td></tr>
+<tr><td>查询商品属性</td><td><code>/api/open/product/pv/list</code></td></tr>
+<tr><td>查询商品列表</td><td><code>/api/open/product/list</code></td></tr>
+<tr><td>查询商品详情</td><td><code>/api/open/product/detail</code></td></tr>
+<tr><td>查询商品规格</td><td><code>/api/open/product/sku/list</code></td></tr>
+<tr><td>创建商品（单个）</td><td><code>/api/open/product/create</code></td></tr>
+<tr><td>创建商品（批量）</td><td><code>/api/open/product/batchCreate</code></td></tr>
+<tr><td>编辑商品</td><td><code>/api/open/product/edit</code></td></tr>
+<tr><td><b>上架商品</b></td><td><code>/api/open/product/publish</code></td></tr>
+<tr><td>下架商品</td><td><code>/api/open/product/downShelf</code></td></tr>
+<tr><td>编辑库存</td><td><code>/api/open/product/edit/stock</code></td></tr>
+<tr><td>删除商品</td><td><code>/api/open/product/delete</code></td></tr>
+<tr><td rowspan="9"><b>订单</b></td><td>查询订单列表</td><td><code>/api/open/order/list</code></td></tr>
+<tr><td>查询订单详情</td><td><code>/api/open/order/detail</code></td></tr>
+<tr><td>订单卡密列表</td><td><code>/api/open/order/kam/list</code></td></tr>
+<tr><td>订单物流发货</td><td><code>/api/open/order/ship</code></td></tr>
+<tr><td><b>无需物流发货</b></td><td><code>/api/open/trade/logistics/dummy/send</code></td></tr>
+<tr><td>订单修改价格</td><td><code>/api/open/order/modify/price</code></td></tr>
+<tr><td>修改快递单号</td><td><code>/api/open/trade/logistics/waybill/modify</code></td></tr>
+<tr><td>订单修改地址详情</td><td><code>/api/open/trade/address/modify/info</code></td></tr>
+<tr><td>订单修改地址审核</td><td><code>/api/open/trade/address/modify/operate</code></td></tr>
+<tr><td rowspan="4"><b>售后</b></td><td>售后订单列表</td><td><code>/api/open/trade/refund/list</code></td></tr>
+<tr><td>售后订单详情</td><td><code>/api/open/trade/refund/detail</code></td></tr>
+<tr><td>同意退款</td><td><code>/api/open/trade/refund/operate/agree</code></td></tr>
+<tr><td>拒绝退款</td><td><code>/api/open/trade/refund/operate/refused</code></td></tr>
+<tr><td rowspan="10"><b>卡密</b></td><td>卡密分类 创建/列表/编辑/删除</td><td><code>/api/open/kami/category/{create,list,edit,delete}</code></td></tr>
+<tr><td>卡种 创建/列表/详情/编辑/删除</td><td><code>/api/open/kami/kind/{create,list,info,edit,delete}</code></td></tr>
+<tr><td><b>卡种添加卡密库存</b></td><td><code>/api/open/kami/storage/create</code></td></tr>
+<tr><td>发卡组合 创建/列表/删除</td><td><code>/api/open/kami/group/{create,list,delete}</code></td></tr>
+<tr><td>发卡组合更新状态</td><td><code>/api/open/kami/group/update/status</code></td></tr>
+<tr><td>发卡组合修改</td><td><code>/api/open/kami/group/edit</code></td></tr>
+<tr><td><b>推送</b></td><td>商品推送 / 商品回调 / 订单推送</td><td>你提供 URL，闲管家主动推给你</td></tr>
+<tr><td><b>其他</b></td><td>查询快递公司</td><td><code>/api/open/express/companies</code></td></tr>
+</tbody>
+</table>
+
+<h2>七、发货链路的两种设计</h2>
+
+<h3>7.1 阶段一：闲管家原生发卡（零代码）</h3>
+
+<pre><code>1. 你在网盘手动创建分享链接（有效期建议 30 天）
+2. 把 "链接 提取码" 作为一条卡密，灌进卡种库存：
+   POST /api/open/kami/storage/create
+   { "kind_id": &lt;卡种ID&gt;, "cards": ["链接:https://pan.baidu.com/s/xxx 提取码:abcd"], "is_repeat": false }
+3. 在闲管家后台把「发卡组合」绑定到商品，开启虚拟自动发货
+4. 买家下单 → 闲管家自动发一条卡密给他 → 完成</code></pre>
+
+<div class="card note">
+<h4>需要你在后台确认一件事</h4>
+<p style="margin-bottom:0">「发卡组合怎么绑定到具体商品」这一步，官方文档里只有 <code>group/create</code>（字段是 <code>group_name</code> + <code>kind_group</code>）和 <code>group/update/status</code>，<b>没有出现商品 ID 字段</b>。推测绑定入口在闲管家后台的商品编辑页（虚拟发货设置）。这一步拿到账号后我看一眼就能确认，先不猜。</p>
+</div>
+
+<h3>7.2 阶段二：一单一链（拿到分享权限后）</h3>
+
+<pre><code>买家下单
+  ↓ 闲管家推送（超时 3 秒，官方建议先返回 success 再异步处理）
+POST 你的回调地址  ?appid=…&timestamp=…&sign=…
+body: { "order_no": "...", "order_type": 7, "order_status": 2, ... }
+  ↓ 验签（推送的签名不含 seller_id）
+md5("应用KEY,Body报文Md5值,时间戳,应用密钥")
+  ↓ 生成该订单专属的网盘分享链接（调百度分享接口）
+  ↓ 发货
+POST /api/open/trade/logistics/dummy/send
+{ "order_no": "...", "send_way": 2 }
+  ↓ 记台账：订单号 ↔ 分享链接 ↔ 有效期
+退款推送到达 → 精确作废该订单的链接</code></pre>
+
+<p>这一段代码已经写好了：<code>push.ts</code> 里有验签、时间戳容差（官方 5 分钟，我放宽到 10 分钟抗时钟漂移）、以及把推送报文翻译成「该不该发货」的判定逻辑。</p>
+
+<h2>八、必须记住的几条硬约束</h2>
+
+<table>
+<thead><tr><th>约束</th><th>数值 / 规则</th><th>影响</th></tr></thead>
+<tbody>
+<tr><td>应用类型</td><td>必须是<b>进销存</b>类型，且<b>已上线</b></td><td>否则一律报 <code>100001 应用不存在或已下线</code></td></tr>
+<tr><td>开放平台版本</td><td>仅 <b>ERP 专业版 / 铂金版</b>可创建应用</td><td>高级版不行</td></tr>
+<tr><td>QPS</td><td>单账号所有接口合计 <b>10 次/秒</b></td><td>已在客户端内置限速器</td></tr>
+<tr><td>日调用量</td><td>每个 API <b>100000 次/天</b></td><td>批量上架要留意</td></tr>
+<tr><td>时间戳有效期</td><td><b>5 分钟</b></td><td>本机时钟必须准</td></tr>
+<tr><td>签名 body</td><td>必须<b>压缩 JSON</b>；参数<b>不排序</b>；中文与链接<b>原样传不编码</b></td><td>三个都是踩过坑的地方</td></tr>
+<tr><td>商品图片</td><td>必须<b>公网可访问</b>的 http/https 地址</td><td><b>没有图片上传接口</b>，本地路径一律不行</td></tr>
+<tr><td>店铺授权</td><td>有效期 <b>半年</b>，过期无法管理商品订单</td><td>过期只能人工在后台重新授权，无法自动</td></tr>
+<tr><td>推送重试</td><td>最多 <b>3 次</b>，超时 <b>3 秒</b></td><td>必须快速返回 <code>{"result":"success"}</code></td></tr>
+<tr><td>上架结果</td><td><b>异步</b>，有发布失败的可能</td><td>务必配 <code>notify_url</code>，否则只能去后台翻列表</td></tr>
+<tr><td>门店数量</td><td>一个闲管家账号可绑 <b>30 个</b>闲鱼店铺</td><td>每个店铺都要单独订购 ERP 版本</td></tr>
+<tr><td>沙箱环境</td><td><b>没有</b></td><td>只有首次绑定店铺的 7 天试用；没有测试账号</td></tr>
+</tbody>
+</table>
+
+<div class="card warn">
+<h4>关于 <code>service_support</code> 这个字段</h4>
+<p style="margin-bottom:0">官方 FAQ 第 12 条明确：<b>「service_support 商品服务不是传参就能用的，闲鱼 APP 要开通相关服务才能使用」</b>。传了但店铺没开通，上架会直接报「未开通服务或当前品类不支持开通服务; [2]-[99]」。所以我在草稿校验里加了警告——<b>默认别填</b>。</p>
+</div>
+
+<h2>九、下一步</h2>
+
+<div class="card hero">
+<h4>最短路径</h4>
+<ol style="margin-bottom:0">
+<li><b>你去闲管家完成接入前置条件</b>（注册 → 绑店 → 鱼小铺资质 → 订购 ERP 专业版/铂金版 → 建进销存应用 → 填 IP 白名单 → 应用上线）。</li>
+<li><b>把 AppKey、AppSecret、闲鱼会员名发我</b>，我自己查出口 IP 并告诉你要不要加白名单。</li>
+<li>我跑 <code>gf:ping</code> → <code>gf:categories</code> → <code>gf:publish --live</code>，<b>联调测试商品当天就能在闲鱼上看到</b>。</li>
+<li>链路确认后，转头做阶段一的卡密池：你建好分享链接，我用 <code>kami</code> 系列接口灌进卡密池。</li>
+</ol>
+</div>
+
+<p class="tagline">本文所述接口路径、字段、限制，均取自闲管家开放平台官方 Apifox 文档（项目 2973339），2026-10-06 逐条核对。签名算法已用官方测试向量验证。</p>
+
+</div>
+</body>
+</html>

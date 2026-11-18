@@ -1,0 +1,43 @@
+{
+  "name": "@bdpan/xgj-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "闲管家「虚拟货源」自研系统网关：闲管家调用本服务获取商品与下单，本服务返回卡密。零运行时依赖，可独立 Docker 部署。",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "dist",
+    "verify.mjs",
+    "README.md",
+    "Dockerfile",
+    "docker-compose.yml",
+    ".env.example"
+  ],
+  "scripts": {
+    "serve": "npx --yes tsx src/cli/serve.ts",
+    "selftest": "npx --yes tsx src/cli/selftest.ts",
+    "import": "npx --yes tsx src/cli/import-goods.ts",
+    "bundle": "node build.mjs",
+    "start": "node dist/server.mjs",
+    "verify": "node verify.mjs",
+    "docker:build": "docker build -t xgj-gateway:local .",
+    "docker:up": "docker compose up -d",
+    "docker:logs": "docker compose logs -f gateway",
+    "docker:health": "docker compose exec gateway node -e \"fetch('http://127.0.0.1:8787/__health').then(r=>r.text()).then(console.log)\""
+  },
+  "keywords": [
+    "goofish",
+    "xian-guan-jia",
+    "virtual-source",
+    "gateway",
+    "ka-mi"
+  ]
+}

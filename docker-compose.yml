@@ -1,0 +1,233 @@
+# 本项目的**全部常驻服务** —— 一条命令全起。
+#
+#   docker compose build              # 只构建镜像（不动正在跑的服务）
+#   docker compose up -d              # 构建并启动全部
+#   docker compose ps                 # 看状态
+#   docker compose logs -f tunnel-xgj # 看某一条的日志
+#   docker compose down               # 停止（数据都在挂载目录里，不会丢）
+#
+# ── 五个服务
+#   gateway       闲管家「虚拟货源」回调网关       127.0.0.1:8787
+#   tunnel-xgj    反向隧道：把公网 /goofish/* 打回本机
+#   tunnel-wechat 反向隧道：把公网 /wechat*  打回本机
+#   wechat-serve  微信公众号关键词自动回复        127.0.0.1:8899
+#   admin         本机运营台                       127.0.0.1:8790
+#
+# ── 为什么隧道用两个独立容器，而不是一个容器开两条 -R
+#   ssh 的 `ExitOnForwardFailure=yes` 会让**任一**端口冲突拖垮整条隧道。
+#   微信那条起不来事小；把闲管家回调链路（断了 = 拍单不发货且无提示）一起带断就是事故。
+#   所以两条隧道永远是两个进程 —— 现在只是从两个 launchd agent 变成两个容器。
+#
+# ── 变量从同目录 .env 读取（compose 自动加载）
+#   只把每个服务**真正需要的**变量传给它。网关要暴露到公网，就绝不把百度网盘密钥塞进去；
+#   隧道只需要一把私钥，也不需要网盘凭据。
+#
+# ── ⭐ 把整套搬到别的机器（服务器）
+#   镜像不依赖 macOS：图片体检会自动从 Vision 切到 tesseract（见 scripts/lib/ocr.mjs）。
+#   服务器上**不要起隧道**（网关就在本机，不需要往回打）：
+#       docker compose up -d gateway wechat-serve admin
+#   另外服务器上要把 Caddy 指向真实端口、并考虑打开 XGJ_IP_WHITELIST。
+#   完整步骤见 docs/迁移-搬到别的机器.md。
+#
+# ── ⚠️ 数据一律用 bind mount 挂进仓库，不用命名卷
+#   命名卷只在「卷为空」时从镜像初始化一次，之后改依赖也不会刷新 → 依赖静默漂移。
+#   而且 bind mount 能直接用 git / 备份工具看见，迁移时就是拷目录。
+
+name: bdpan-goofish
+
+x-app: &app
+  image: bdpan-goofish:local
+  restart: unless-stopped
+  init: true
+  networks:
+    - xgj
+
+services:
+  # ────────────────────────────────────────────────── 闲管家回调网关
+  gateway:
+    <<: *app
+    build:
+      context: .
+    container_name: xgj-gateway
+    environment:
+      XGJ_DATA_DIR: /data
+      XGJ_PORT: "8787"
+      # 商户号 / 对接密钥：由我们自定义，再填进闲管家「货源授权信息」
+      XGJ_MCH_ID: ${XGJ_MCH_ID:?请在 .env 设置 XGJ_MCH_ID}
+      XGJ_MCH_SECRET: ${XGJ_MCH_SECRET:?请在 .env 设置 XGJ_MCH_SECRET}
+      # 闲管家应用概况里的 AppKey / AppSecret，用于验签
+      GOOFISH_APP_KEY: ${GOOFISH_APP_KEY:?请在 .env 设置 GOOFISH_APP_KEY}
+      GOOFISH_APP_SECRET: ${GOOFISH_APP_SECRET:?请在 .env 设置 GOOFISH_APP_SECRET}
+      # 经隧道进入时源 IP 是隧道出口，不是闲管家出口，故必须保持 false
+      XGJ_IP_WHITELIST: "false"
+      XGJ_TIMESTAMP_TOLERANCE: "${XGJ_TIMESTAMP_TOLERANCE:-300}"
+    volumes:
+      # 卡密池与订单台账落在这里，容器重建不丢
+      - ./packages/xgj-gateway/data:/data
+    ports:
+      # 只绑本机回环，方便本机 curl 调试；公网入口一律走隧道
+      - "127.0.0.1:8787:8787"
+    healthcheck:
+      # 打网关自带的免签名探针：区分「容器活着」和「服务真的能应答」
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:'+(process.env.XGJ_PORT||8787)+'/__health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 3s
+      start_period: 15s
+      retries: 3
+
+  # ────────────────────────────────────────────────── 反向隧道 · 闲管家
+  tunnel-xgj:
+    <<: *app
+    container_name: xgj-tunnel-xgj
+    command: ["node", "scripts/tunnel-ssh.mjs", "--name=xgj"]
+    depends_on:
+      gateway:
+        condition: service_healthy
+    environment:
+      TUNNEL_NAME: xgj
+      TUNNEL_SSH_HOST: ${TUNNEL_SSH_HOST:?请在 .env 设置 TUNNEL_SSH_HOST}
+      # ⚠️ 指向容器内的挂载点，不是宿主路径 —— 见下面 volumes 的说明
+      TUNNEL_SSH_KEY: /run/keys/tunnel.key
+      TUNNEL_REMOTE_PORT: "${TUNNEL_REMOTE_PORT:-8787}"
+      TUNNEL_LOCAL_PORT: "8787"
+      # ⭐ 容器里的 127.0.0.1 是它自己的回环，那里没有网关 → 必须用服务名
+      TUNNEL_LOCAL_HOST: gateway
+      TUNNEL_PUBLIC_URL: ${GOOFISH_PUBLIC_URL:-}
+    volumes:
+      # ⚠️ 源路径用 `.env` 里的宿主绝对路径（compose 会把变量插进 volume 源），
+      #    容器内固定落在 /run/keys/tunnel.key，只读。密钥不烤进镜像。
+      - ${TUNNEL_SSH_KEY:?请在 .env 设置 TUNNEL_SSH_KEY}:/run/keys/tunnel.key:ro
+    healthcheck:
+      # ⚠️ 隧道「进程活着」≠「转发可用」：2026-10-21 实测断了 2 小时 11 分，
+      #    两条隧道各刷了 2633 次重连，而 docker ps 始终显示 `Up 43 hours`。
+      #    脚本连上后会每 20 秒刷新心跳文件，这里只认「心跳是否新鲜」——
+      #    断线超过 90 秒即 unhealthy，让状态在 `docker ps` / `docker compose ps` 里一眼可见。
+      test:
+        - CMD
+        - node
+        - -e
+        - "try{const s=require('fs').statSync(process.env.TUNNEL_HEARTBEAT||'/tmp/tunnel-heartbeat');process.exit(Date.now()-s.mtimeMs>90000?1:0)}catch{process.exit(1)}"
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+  # ────────────────────────────────────────────────── 微信公众号关键词回复
+  wechat-serve:
+    <<: *app
+    container_name: xgj-wechat
+    command: ["node", "scripts/wechat-reply-server.mjs"]
+    environment:
+      PORT: "8899"
+      # ⚠️ 必须 0.0.0.0：容器内的 127.0.0.1 端口映射到不了。
+      #    对外仍然只暴露在 127.0.0.1（见 ports）。
+      HOST: "0.0.0.0"
+      WECHAT_TOKEN: ${WECHAT_TOKEN:?请在 .env 设置 WECHAT_TOKEN}
+      WECHAT_PATH: ${WECHAT_PATH:-/wechat}
+    volumes:
+      # 关键词表 / 审计结果 / 网盘链接表：都是只读
+      - ./out:/app/out:ro
+      - ./assets/free-software:/app/assets/free-software:ro
+    ports:
+      - "127.0.0.1:8899:8899"
+    healthcheck:
+      # 没有 HTTP 健康端点，就探 TCP —— 够用来判断「进程起来了并且在听」
+      test:
+        - CMD
+        - node
+        - -e
+        - "const n=require('net');const s=n.connect(Number(process.env.PORT||8899),'127.0.0.1',()=>{s.end();process.exit(0)});s.on('error',()=>process.exit(1))"
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  # ────────────────────────────────────────────────── 反向隧道 · 微信
+  tunnel-wechat:
+    <<: *app
+    container_name: xgj-tunnel-wechat
+    command: ["node", "scripts/tunnel-ssh.mjs", "--name=wechat"]
+    depends_on:
+      wechat-serve:
+        condition: service_healthy
+    environment:
+      TUNNEL_NAME: wechat
+      TUNNEL_SSH_HOST: ${TUNNEL_SSH_HOST:?请在 .env 设置 TUNNEL_SSH_HOST}
+      TUNNEL_SSH_KEY: /run/keys/tunnel.key
+      # 微信链路的远端端口与闲管家不同，这里**显式覆盖** .env 里那两个 8787
+      TUNNEL_REMOTE_PORT: "8899"
+      TUNNEL_LOCAL_PORT: "8899"
+      TUNNEL_LOCAL_HOST: wechat-serve
+      TUNNEL_PUBLIC_URL: ${PUBLIC_BASE_URL:-}/wechat
+    volumes:
+      - ${TUNNEL_SSH_KEY:?请在 .env 设置 TUNNEL_SSH_KEY}:/run/keys/tunnel.key:ro
+    healthcheck:
+      # ⚠️ 隧道「进程活着」≠「转发可用」：2026-10-21 实测断了 2 小时 11 分，
+      #    两条隧道各刷了 2633 次重连，而 docker ps 始终显示 `Up 43 hours`。
+      #    脚本连上后会每 20 秒刷新心跳文件，这里只认「心跳是否新鲜」——
+      #    断线超过 90 秒即 unhealthy，让状态在 `docker ps` / `docker compose ps` 里一眼可见。
+      test:
+        - CMD
+        - node
+        - -e
+        - "try{const s=require('fs').statSync(process.env.TUNNEL_HEARTBEAT||'/tmp/tunnel-heartbeat');process.exit(Date.now()-s.mtimeMs>90000?1:0)}catch{process.exit(1)}"
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+  # ────────────────────────────────────────────────── 本机运营台
+  admin:
+    <<: *app
+    container_name: xgj-admin
+    command: ["npx", "tsx", "packages/xgj-admin/src/server.ts"]
+    environment:
+      ADMIN_PORT: "8790"
+      # ⚠️ 同上：容器内必须 0.0.0.0，对外只暴露 127.0.0.1
+      ADMIN_HOST: "0.0.0.0"
+      XGJ_PORT: "8787"
+      # 体检结果里要标出用的是哪个 OCR 引擎。留空 = 按平台自动选
+      # （macOS → vision；Linux 容器 → tesseract）。容器里若想强制 vision 会失败，
+      # 因为 Linux 没有 Vision 框架 —— 强制只在排查时用。
+      PREFLIGHT_OCR: ${PREFLIGHT_OCR:-}
+      # 商品图上传到图床走 ssh/scp
+      MEDIA_SSH_TARGET: ${MEDIA_SSH_TARGET:-}
+      MEDIA_SSH_KEY: /run/keys/media.key
+      MEDIA_REMOTE_DIR: ${MEDIA_REMOTE_DIR:-/srv/goods-img}
+      MEDIA_PUBLIC_BASE: ${MEDIA_PUBLIC_BASE:-}
+    volumes:
+      # 草稿、台账、排除名单 —— 运营台要读写
+      - ./drafts:/app/drafts
+      # 体检缓存与结论、发布护栏状态
+      - ./out:/app/out
+      # 商品图：assets/goods（本地中转，要写）+ assets/<id>/icon.*（读）
+      - ./assets:/app/assets
+      # 店铺封控名单。它在 packages/ 下容易被忽略，但是**运行时状态**：
+      # 不挂出来，容器一重建就回到镜像里的旧快照，封控期会被静默绕过。
+      - ./packages/xgj-admin/data:/app/packages/xgj-admin/data
+      # ⭐ 网关的数据目录（商品目录 / 卡密池 / 订单台账）。
+      #    运营台通过 xgj-gateway/src/store 读写它 —— 不挂的话**页面照常渲染、数据全是空的**，
+      #    实测 goods 从 758 变成 0，且没有任何报错。这是容器化最典型的静默故障。
+      #    镜像里烤了 XGJ_DATA_DIR=/data，所以这里必须挂到 /data。
+      - ./packages/xgj-gateway/data:/data
+      # 运营台自己会调百度网盘 / 闲管家的接口（扫描目录、查线上商品），
+      # 需要的凭据比网关多得多。它是**只绑 127.0.0.1 的本机服务**，
+      # 所以直接挂 .env 最简单也最不容易漏 —— compose 的 environment 优先级更高，可覆盖个别键。
+      - ./.env:/app/.env:ro
+      # 图床私钥（只读）。当前 MEDIA_SSH_KEY 与 TUNNEL_SSH_KEY 指向同一个文件，
+      # 但仍然分开声明 —— 以后换机器/换账号它们可能不是一个。
+      - ${MEDIA_SSH_KEY:?请在 .env 设置 MEDIA_SSH_KEY}:/run/keys/media.key:ro
+    ports:
+      # ⚠️ 运营台**没有任何鉴权**，而它能直接上架到闲鱼（不可逆）。
+      #    所以默认只绑 127.0.0.1：要远程访问就开 SSH 端口转发
+      #      ssh -N -L 8790:127.0.0.1:8790 <目标机>
+      #    想让局域网直连再设 ADMIN_BIND=0.0.0.0（自担风险）。
+      - "${ADMIN_BIND:-127.0.0.1}:8790:8790"
+
+networks:
+  xgj:
+    driver: bridge

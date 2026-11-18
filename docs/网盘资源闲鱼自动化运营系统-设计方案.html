@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>网盘资源 → 闲鱼自动化运营系统 · 设计方案</title>
+<style>
+:root{--bg:#F7F6F3;--card:#FFFFFF;--line:#E4E2DC;--t1:#1E1E1C;--t2:#5F5E5A;--t3:#8A8880;
+--blue:#185FA5;--blue-bg:#E6F1FB;--teal:#0F6E56;--teal-bg:#E1F5EE;--purple:#534AB7;--purple-bg:#EEEDFE;
+--amber:#854F0B;--amber-bg:#FAEEDA;--red:#A32D2D;--red-bg:#FCEBEB;--coral:#993C1D;--coral-bg:#FAECE7;
+--green:#3B6D11;--green-bg:#EAF3DE;--gray-bg:#F1EFE8;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);font:15px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:48px 28px 96px}
+header{border-bottom:3px solid var(--t1);padding-bottom:24px;margin-bottom:40px}
+h1{font-size:30px;line-height:1.3;margin:0 0 10px;font-weight:600;letter-spacing:-.01em}
+.sub{color:var(--t2);font-size:15px;margin:0}
+.meta{margin-top:16px;font-size:13px;color:var(--t3);display:flex;gap:20px;flex-wrap:wrap}
+h2{font-size:20px;font-weight:600;margin:52px 0 18px;padding-left:14px;border-left:4px solid var(--t1);line-height:1.3}
+h3{font-size:16px;font-weight:600;margin:30px 0 12px}
+h4{font-size:14px;font-weight:600;margin:22px 0 10px;color:var(--t2)}
+p{margin:12px 0}
+ul,ol{margin:12px 0;padding-left:22px}
+li{margin:6px 0}
+code{background:#EAE8E2;padding:2px 6px;border-radius:4px;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:#2C2C2A}
+pre{background:#2C2C2A;color:#E8E6E0;padding:16px 18px;border-radius:10px;overflow-x:auto;font:12.5px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;margin:14px 0}
+pre code{background:none;color:inherit;padding:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin:18px 0}
+.card.warn{background:var(--red-bg);border-color:#F09595}
+.card.ok{background:var(--green-bg);border-color:#C0DD97}
+.card.note{background:var(--blue-bg);border-color:#B5D4F4}
+.card h4{margin-top:0;color:var(--t1)}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th{background:var(--gray-bg);text-align:left;padding:11px 14px;font-weight:600;font-size:13px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--t2)}
+tr:last-child td{border-bottom:none}
+td strong,td b{color:var(--t1);font-weight:600}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.p-red{background:#F7C1C1;color:#791F1F}
+.p-green{background:#C0DD97;color:#27500A}
+.p-amber{background:#FAC775;color:#633806}
+.p-blue{background:#B5D4F4;color:#0C447C}
+.p-gray{background:#D3D1C7;color:#444441}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:18px 0}
+@media(max-width:760px){.grid,.grid3{grid-template-columns:1fr}}
+.mini{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.mini h4{margin:0 0 8px;font-size:14px;color:var(--t1)}
+.mini p{margin:0;font-size:13.5px;color:var(--t2);line-height:1.65}
+.num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--t1);color:#fff;font-size:12px;font-weight:600;margin-right:8px;flex-shrink:0}
+.step{display:flex;gap:12px;margin:14px 0}
+.step .body{flex:1}
+.step .body b{display:block;font-size:14px;margin-bottom:2px}
+.step .body span{font-size:13.5px;color:var(--t2)}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+blockquote{margin:0}
+svg{display:block;margin:20px 0;max-width:100%}
+.fig{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px;margin:20px 0}
+.fig .cap{font-size:12.5px;color:var(--t3);text-align:center;margin-top:8px}
+.anchor{background:var(--amber-bg);border-left:4px solid var(--amber);padding:14px 18px;border-radius:0 8px 8px 0;margin:18px 0;font-size:14px}
+.anchor b{color:#633806}
+hr{border:none;border-top:1px solid var(--line);margin:40px 0}
+.tagline{font-size:13px;color:var(--t3);margin-top:6px}
+ol.tight li{margin:4px 0}
+.check{list-style:none;padding-left:0}
+.check li{position:relative;padding-left:30px;margin:10px 0}
+.check li::before{content:"";position:absolute;left:0;top:6px;width:16px;height:16px;border:1.5px solid var(--t3);border-radius:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+<h1>网盘资源 → 闲鱼自动化运营系统</h1>
+<p class="sub">AI 归类网盘 · 自动生成商品 · 闲管家上架 · 一单一链自动发货</p>
+<div class="meta">
+<span>设计方案 v1.0</span>
+<span>2026-10-06</span>
+<span>应用 AppID 124070117</span>
+<span>工作区 百度网盘mcp</span>
+</div>
+</header>
+
+<div class="card warn">
+<h4>先处理这件事：这批凭证已经在聊天里明文出现过</h4>
+<p style="margin-bottom:8px">AppKey / SecretKey / SignKey 一旦泄露，任何人都能用你的应用身份走 OAuth、创建分享、消耗你的付费额度。建议今天就做：</p>
+<ol class="tight" style="margin-bottom:0">
+<li>到控制台<b>重置 SecretKey 与 SignKey</b>（AppKey 也会一并换），旧值立即作废</li>
+<li>新凭证只写进 <code>.env</code> / 密钥管理，<code>.gitignore</code> 必须包含 <code>.env</code>、<code>*.token.json</code></li>
+<li>不要贴到聊天、issue、截图里；<code>access_token</code>、提取码同样不能进日志</li>
+</ol>
+</div>
+
+<h2>一、总体结论</h2>
+
+<p>这个需求技术上成立，但它<b>不是一件事，而是四件事</b>拼起来：网盘盘点归类、资源选品定价、闲管家上架、订单自动发货。把它们串成一条链的最佳形态是：<b>以「资源中台 + 闲管家适配层」为核心的自研系统，AI 通过 MCP 直接操作网盘，用 n8n 做可视化编排和人工审批闸门。</b></p>
+
+<div class="grid3">
+<div class="mini"><h4>可行</h4><p>网盘列表 / 搜索 / 移动 / 上传 / 分享、闲管家商品上架、订单推送、自动发货，全部有官方接口。</p></div>
+<div class="mini"><h4>有门槛</h4><p>百度网盘「创建分享链接」是<b>付费接口且仅企业开发者可用</b>。这是自动发货链路的命门，必须先解决。</p></div>
+<div class="mini"><h4>要设计</h4><p>网盘应用只能操作 <code>/apps/{appname}</code> 目录。整个资源仓必须建立在这个目录之下。</p></div>
+</div>
+
+<h2>二、平台硬约束（先看，它决定架构）</h2>
+
+<h3>2.1 百度网盘开放平台</h3>
+<table>
+<thead><tr><th>约束项</th><th>具体规则</th><th>对你的影响</th></tr></thead>
+<tbody>
+<tr><td><b>目录范围</b></td><td>2026-06-03 后创建的应用，<code>download</code> / <code>listall</code> / <code>filemanager</code> / <code>precreate</code> / <code>meta</code> / <code>move</code> 仅支持访问 <code>/apps/{appname}</code> 目录</td><td><span class="pill p-red">核心</span> 不能管理全盘。资源仓必须放在 <code>/apps/应用名/</code> 下，网盘里显示为「我的应用数据/应用名」</td></tr>
+<tr><td><b>上传目录</b></td><td>每个应用在网盘只有一个文件夹，位于 <code>/apps</code> 下，命名 = 应用名</td><td>上传目标路径固定，不能自选</td></tr>
+<tr><td><b>文件分享</b></td><td>官方「权限说明」原文：<b>「本接口为付费接口，购买文件分享服务并开通分享权限后才可正式使用」</b>；「接入流程」第 2 步原文：<b>「文件分享服务属于企业开发者专属权益，需要先完成企业开发者认证」</b></td><td><span class="pill p-red">阻塞</span> 个人认证账号无法调用 → 自动发货做不了。未开通时调用返回 <code>errno=13998</code>「没有申请分享权限」。详见 <a href="#appendix">附录：官方原文</a></td></tr>
+<tr><td><b>Token</b></td><td>授权码模式；<code>access_token</code> 30 天有效；<code>refresh_token</code> 长期但<b>单次使用后轮换</b>，刷新会返回新的 refresh_token</td><td>必须做 token 自动续期 + 持久化，刷新失败要告警</td></tr>
+<tr><td><b>授权方式</b></td><td>必须人工在百度页面登录授权（不支持用户名密码代调）；回调地址须公网 HTTPS，配置后 1 小时生效</td><td>首次授权需人工，之后靠 refresh_token 长期跑</td></tr>
+<tr><td><b>应用用途</b></td><td>【个人使用】免审核但限 10 个用户；【公开发布】需提交审核，不限人数</td><td>自己用选个人使用即可</td></tr>
+<tr><td><b>频控</b></td><td><code>listall</code> 建议不超过 8–10 次/分钟，命中返回 31034</td><td>盘点任务要排队 + 退避重试</td></tr>
+<tr><td><b>单文件上限</b></td><td>普通用户 4GB / 会员 10GB / 超会 20GB；分片数 ≤1024</td><td>大文件走分片上传</td></tr>
+</tbody>
+</table>
+
+<div class="card note">
+<h4>一句话判断</h4>
+<p style="margin-bottom:0">先去控制台确认 AppID <code>124070117</code> 的<b>开发者认证类型</b>。如果是「个人认证」，你今天的第一个任务不是写代码，而是<b>完成企业开发者认证并购买文件分享服务</b>（走商务对接，非自助开通）——否则整条自动发货链路无法成立，只能退化成「人工发链接」或改用其他交付方式。完整官方原文见文末<a href="#appendix">附录</a>。</p>
+</div>
+
+<h3>2.2 闲管家开放平台</h3>
+<table>
+<thead><tr><th>约束项</th><th>具体规则</th></tr></thead>
+<tbody>
+<tr><td><b>接入前置</b></td><td>① 注册闲管家并绑定闲鱼店铺 ② 店铺具备<b>鱼小铺</b>资质 ③ <b>订购开放平台版本</b>（ERP 铂金版 / 专业版）④ 创建应用（类型选「进销存」）⑤ 配置服务器 <b>IP 白名单</b> ⑥ 填写消息回调地址 ⑦ 点击<b>应用上线</b>（未上线接口不可调用）</td></tr>
+<tr><td><b>网关</b></td><td><code>https://open.goofish.pro</code></td></tr>
+<tr><td><b>签名</b></td><td><code>sign = md5(appKey + "," + md5(body) + "," + timestamp + "," + appSecret)</code>，MD5 算法，timestamp 为秒；商务对接模式额外插入 sellerID</td></tr>
+<tr><td><b>强校验</b></td><td>所有参数强校验，字段类型/必填必须严格按文档；<code>code = 0</code> 才算成功</td></tr>
+<tr><td><b>频控</b></td><td>默认 QPS 10，可额外订购扩容；<code>403</code>=IP 不在白名单，<code>408</code>=时间戳过期，<code>401</code>=签名错误</td></tr>
+<tr><td><b>图片</b></td><td>发布商品的图片<b>必须是公网可访问的图片 URL</b>，不能传本地路径</td></tr>
+<tr><td><b>推荐做法</b></td><td>订单/商品变更<b>优先用回调推送</b>，不要高频轮询</td></tr>
+</tbody>
+</table>
+
+<h3>2.3 闲管家可用接口（按业务模块）</h3>
+<table>
+<thead><tr><th>模块</th><th>接口</th></tr></thead>
+<tbody>
+<tr><td><b>店铺</b></td><td>查询闲鱼店铺、查询商家地址</td></tr>
+<tr><td><b>商品</b></td><td>查询类目 / 属性 / 商品列表 / 商品详情 / 商品规格、<b>创建商品（单个 / 批量）</b>、<b>上架</b>、下架、编辑商品、编辑库存、删除商品</td></tr>
+<tr><td><b>订单</b></td><td>查询订单列表 / 详情、<b>订单卡密列表</b>、订单物流发货、<b>无需物流发货</b>、修改快递单号、订单修改价格、地址修改与审核</td></tr>
+<tr><td><b>售后</b></td><td>售后订单列表 / 详情、同意退款、拒绝退款、拒绝原因</td></tr>
+<tr><td><b>卡密</b></td><td>卡密分类增删改查、<b>卡种</b>增删改查、<b>卡种添加卡密库存</b>、发卡组合增删改查与状态</td></tr>
+<tr><td><b>推送</b></td><td>商品回调通知、商品推送通知、<b>订单推送通知</b></td></tr>
+<tr><td><b>其他</b></td><td>查询快递公司</td></tr>
+</tbody>
+</table>
+
+<h2>三、三条接入路线（关键决策）</h2>
+
+<p>闲管家的「自动发货」有两条天然通路，加上百度侧的一种偷懒做法，一共三条。选错会白干一遍。</p>
+
+<table>
+<thead><tr><th>路线</th><th>做法</th><th>优点</th><th>代价</th><th>结论</th></tr></thead>
+<tbody>
+<tr>
+<td><b>A · 商家自研 ERP</b><br><span class="tagline">推荐主线</span></td>
+<td>自己开店，用开放平台 API 全流程：创建商品 → 上架 → 收订单推送 → 调发货接口</td>
+<td>一套 appKey 全控；能用上「批量创建商品」，最容易做全自动上架</td>
+<td>需订购闲管家开放平台版本；商品字段多且强校验，联调成本高</td>
+<td><span class="pill p-green">主线</span></td>
+</tr>
+<tr>
+<td><b>B · 虚拟货源平台</b></td>
+<td>把自己注册成闲管家的「货源方」，闲管家调你的「创建卡密订单」接口，你返回发货内容</td>
+<td>发货逻辑最干净；一套货源可服务多个闲鱼商家（可做成生意）</td>
+<td>要按货源标准实现 10+ 接口，并接受闲管家的签名与回调规范</td>
+<td><span class="pill p-blue">二期扩展</span></td>
+</tr>
+<tr>
+<td><b>C · 卡密池托管</b></td>
+<td>只把「分享链接 + 提取码」批量灌进闲管家的卡密仓库，用闲管家原生自动发货</td>
+<td>零发货代码，最快跑通收入闭环</td>
+<td>卡密静态预置，无法一单一链、无法动态追溯、链接泄露难控制</td>
+<td><span class="pill p-amber">先跑通用它</span></td>
+</tr>
+</tbody>
+</table>
+
+<div class="card ok">
+<h4>建议路径：C 先跑通 → A 做全自动化 → B 做规模化</h4>
+<p style="margin-bottom:0">先用路线 C 在 1～2 天内跑出第一笔真实成交（验证商品能上架、能发货、能收款），再用路线 A 把「上架 + 发货」全部自动化，最后如果这套系统好用，再注册货源身份走路线 B，把同一套内核卖给其他闲鱼商家。三条路线共用同一个「资源中台」，只是换适配器，不会返工。</p>
+</div>
+
+<h2>四、总体架构</h2>
+
+<div class="fig">
+<svg viewBox="0 0 680 470" width="100%" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>五层架构图</title>
+<desc>百度网盘资源仓经 MCP 工具层、资源中台、闲管家适配层到闲鱼店铺，右侧由 n8n 可视化编排驱动。</desc>
+<defs>
+<marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+</defs>
+<rect x="40" y="50" width="430" height="56" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="255" y="72" text-anchor="middle" dominant-baseline="central" fill="#0C447C" font-size="14" font-weight="500">L1 · 百度网盘资源仓 /apps/{appname}</text>
+<text x="255" y="92" text-anchor="middle" dominant-baseline="central" fill="#185FA5" font-size="12">列表 · 搜索 · 元信息 · 移动 · 上传 · 分享</text>
+<rect x="40" y="136" width="430" height="56" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text x="255" y="158" text-anchor="middle" dominant-baseline="central" fill="#085041" font-size="14" font-weight="500">L2 · MCP 工具层</text>
+<text x="255" y="178" text-anchor="middle" dominant-baseline="central" fill="#0F6E56" font-size="12">让 AI 直接盘点、整理、归类网盘</text>
+<rect x="40" y="222" width="430" height="56" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="255" y="244" text-anchor="middle" dominant-baseline="central" fill="#3C3489" font-size="14" font-weight="500">L3 · 资源中台</text>
+<text x="255" y="264" text-anchor="middle" dominant-baseline="central" fill="#534AB7" font-size="12">AI 分类 · 选品 · 定价 · 卡密池 · 台账</text>
+<rect x="40" y="308" width="430" height="56" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text x="255" y="330" text-anchor="middle" dominant-baseline="central" fill="#633806" font-size="14" font-weight="500">L4 · 闲管家适配层</text>
+<text x="255" y="350" text-anchor="middle" dominant-baseline="central" fill="#854F0B" font-size="12">MD5 签名 · 限流重试 · 幂等 · 发货</text>
+<rect x="40" y="394" width="430" height="56" rx="10" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+<text x="255" y="416" text-anchor="middle" dominant-baseline="central" fill="#712B13" font-size="14" font-weight="500">L5 · 闲鱼店铺与买家</text>
+<text x="255" y="436" text-anchor="middle" dominant-baseline="central" fill="#993C1D" font-size="12">商品上架 · 订单推送 · 售后</text>
+<path d="M255 106L255 132" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
+<path d="M255 192L255 218" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
+<path d="M255 278L255 304" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
+<path d="M255 364L255 390" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
+<path d="M430 394L430 364" fill="none" stroke="#993C1D" stroke-width="1.5" marker-end="url(#ar)"/>
+<text x="452" y="379" text-anchor="middle" dominant-baseline="central" fill="#993C1D" font-size="11">订单推送</text>
+<path d="M440 192L440 218" fill="none" stroke="#0F6E56" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="500" y="150" width="140" height="200" rx="12" fill="#F1EFE8" stroke="#888780" stroke-width="0.5"/>
+<text x="570" y="178" text-anchor="middle" dominant-baseline="central" fill="#2C2C2A" font-size="14" font-weight="500">n8n 可视化编排</text>
+<text x="522" y="212" dominant-baseline="central" fill="#5F5E5A" font-size="12">· 定时盘点</text>
+<text x="522" y="240" dominant-baseline="central" fill="#5F5E5A" font-size="12">· 人工审批闸门</text>
+<text x="522" y="268" dominant-baseline="central" fill="#5F5E5A" font-size="12">· 链接失效告警</text>
+<text x="522" y="296" dominant-baseline="central" fill="#5F5E5A" font-size="12">· 售后台账回滚</text>
+<text x="522" y="324" dominant-baseline="central" fill="#5F5E5A" font-size="12">· 微信通知</text>
+<path d="M470 250L500 250" fill="none" stroke="#B4B2A9" stroke-width="0.5" stroke-dasharray="4 3" marker-end="url(#ar)" marker-start="url(#ar)"/>
+<path d="M470 340L500 340" fill="none" stroke="#B4B2A9" stroke-width="0.5" stroke-dasharray="4 3" marker-end="url(#ar)" marker-start="url(#ar)"/>
+</svg>
+<p class="cap">图 1 · 五层架构：网盘是货，中台是脑子，闲管家适配层是手，n8n 是节拍器</p>
+</div>
+
+<h3>4.1 各层职责</h3>
+<table>
+<thead><tr><th>层</th><th>职责</th><th>关键设计点</th></tr></thead>
+<tbody>
+<tr><td><b>L1 网盘资源仓</b></td><td>存放待售资源，按规范目录树组织</td><td>路径：<code>/apps/{app}/仓/待售 | 在售 | 归档</code>，<code>/apps/{app}/_assets/封面</code>，<code>/apps/{app}/_tmp</code></td></tr>
+<tr><td><b>L2 MCP 工具层</b></td><td>把网盘能力封装成 AI 可调用的原子工具，同时暴露内部 HTTP API 给服务端复用</td><td>一套内核两种出口（MCP stdio/SSE + HTTP），避免两份实现</td></tr>
+<tr><td><b>L3 资源中台</b></td><td>AI 分类、选品打分、定价、商品草稿、卡密池、分享链接台账、订单台账</td><td>唯一真相源；所有渠道动作都可追溯到某条 resource 记录</td></tr>
+<tr><td><b>L4 闲管家适配层</b></td><td>签名、限流、重试、幂等、字段映射、回调验签与解析</td><td>令牌桶限 QPS 10；订单号做幂等键；错误码分类重试策略</td></tr>
+<tr><td><b>L5 闲鱼店铺</b></td><td>商品与订单的真实发生地</td><td>只通过官方接口交互，不做任何非官方自动化</td></tr>
+<tr><td><b>编排层</b></td><td>n8n 负责定时、串流程、人工审批、告警</td><td>核心逻辑放自有服务，n8n 只做 HTTP 编排——不要把小眼睛逻辑写进 n8n 节点里</td></tr>
+</tbody>
+</table>
+
+<h2>五、L2 · MCP 工具层（让 AI 真的能管网盘）</h2>
+
+<p>工作区叫 <code>百度网盘mcp</code>，这一层就是它的主体。设计原则：<b>工具原子化、权限分档、写操作默认 dry-run</b>。</p>
+
+<h3>5.1 工具清单</h3>
+<table>
+<thead><tr><th>工具名</th><th>对应百度接口</th><th>用途</th><th>风险档</th></tr></thead>
+<tbody>
+<tr><td><code>bd_uinfo</code></td><td><code>/rest/2.0/xpan/nas?method=uinfo</code></td><td>校验 token 是否有效、拿用户名/会员等级</td><td><span class="pill p-green">只读</span></td></tr>
+<tr><td><code>bd_quota</code></td><td><code>/api/quota</code></td><td>查容量，预警空间不足</td><td><span class="pill p-green">只读</span></td></tr>
+<tr><td><code>bd_list</code></td><td><code>/xpan/file?method=list</code></td><td>列目录（支持排序分页、只返回目录）</td><td><span class="pill p-green">只读</span></td></tr>
+<tr><td><code>bd_list_recursive</code></td><td><code>/xpan/multimedia?method=listall</code></td><td>递归盘点整棵目录树（按 cursor 翻页）</td><td><span class="pill p-green">只读</span></td></tr>
+<tr><td><code>bd_search</code></td><td><code>/xpan/file?method=search</code></td><td>按关键词/扩展名搜文件</td><td><span class="pill p-green">只读</span></td></tr>
+<tr><td><code>bd_meta</code></td><td><code>/xpan/multimedia?method=filemetas</code></td><td>批量取文件元信息（虚拟目录展示用）</td><td><span class="pill p-green">只读</span></td></tr>
+<tr><td><code>bd_mkdir</code></td><td><code>/xpan/file?method=create</code></td><td>建目录（建规范目录树）</td><td><span class="pill p-amber">写</span></td></tr>
+<tr><td><code>bd_move</code> <code>bd_rename</code> <code>bd_copy</code> <code>bd_delete</code></td><td><code>/xpan/file?method=filemanager</code>（opera=move/rename/copy/delete）</td><td>移动归类、重命名规范化、复制、删除（进回收站）</td><td><span class="pill p-amber">写</span></td></tr>
+<tr><td><code>bd_upload</code></td><td><code>precreate</code> → <code>upload</code> → <code>create</code>，含 <code>rapidupload</code> 秒传</td><td>上传资源、封面、文案附件</td><td><span class="pill p-amber">写</span></td></tr>
+<tr><td><code>bd_download</code></td><td><code>filemetas</code> 取 dlink → 带 UA 下载</td><td>抽样下载做内容指纹/去重</td><td><span class="pill p-amber">写</span></td></tr>
+<tr><td><code>bd_share_create</code></td><td><code>POST /apaas/1.0/share/set?product=netdisk</code></td><td>生成分享链接 + 提取码（可设有效期）</td><td><span class="pill p-red">付费</span></td></tr>
+<tr><td><code>bd_share_cancel</code></td><td>取消分享</td><td>退款后作废链接</td><td><span class="pill p-red">付费</span></td></tr>
+</tbody>
+</table>
+
+<h3>5.2 三个必须在 MCP 层就做对的设计</h3>
+<div class="grid">
+<div class="mini"><h4>权限分档</h4><p>把工具分成 <code>read</code> / <code>write</code> / <code>money</code> 三档。AI 调 <code>money</code> 档（创建分享、发布商品）时必须显式确认，且默认 <code>dry_run=true</code> 只回执不执行。</p></div>
+<div class="mini"><h4>Token 管家</h4><p>单独进程持有 token：启动校验 → 接近过期自动刷新 → 刷新失败发告警并停止写操作。<b>绝不让 AI 拿到 refresh_token</b>。</p></div>
+<div class="mini"><h4>审计日志</h4><p>每次调用落一条 <code>task_log</code>（工具名、参数指纹、耗时、errno、request_id）。百度返回的 <code>request_id</code> 一定存下来，出问题凭它申诉。</p></div>
+<div class="mini"><h4>路径守卫</h4><p>所有 path 参数强制校验是否落在 <code>/apps/{appname}</code> 前缀内，越界直接拒绝——避免撞上平台的权限错误反复试错。</p></div>
+</div>
+
+<h3>5.3 AI 整理网盘的对话长什么样</h3>
+<pre><code>你：把网盘里的东西盘一遍，能卖的挑出来
+
+AI：(bd_list_recursive → 得到 1,847 个文件)
+    已归类为 6 个主题簇：
+    · 设计素材 412 个（PSD/AI/EPS，约 68GB）
+    · 办公模板 331 个（PPT/Excel）
+    · 教程视频 268 个（MP4，含疑似付费课程）
+    · 电子书 502 个（PDF/EPUB）
+    · 软件安装包 214 个（含破解特征，建议排除）
+    · 其他/杂乱 120 个
+
+    ⚠️ 248 个文件命中「疑似侵权/禁售」规则，已隔离不进候选池
+    ✅ 建议上架候选 37 个，已生成草稿，等你审批</code></pre>
+
+<h2>六、L3 · AI 分类与选品引擎</h2>
+
+<h3>6.1 三级流水线</h3>
+<div class="step"><span class="num">1</span><div class="body"><b>规则预分（快、免费、先做）</b><span>按扩展名 / 关键词 / 大小 / category 字段粗分。成本几乎为零，能砍掉 60% 的噪声。</span></div></div>
+<div class="step"><span class="num">2</span><div class="body"><b>LLM 语义归类（准、贵、后做）</b><span>把「文件名 + 大小 + 目录路径 + 同类兄弟文件」打包成批次喂给模型，输出主题树与标签。按批处理而非逐文件，控制成本。</span></div></div>
+<div class="step"><span class="num">3</span><div class="body"><b>可售性打分（决定上不上架）</b><span>四个维度加权：版权洁净度（命中禁售词/破解特征直接归零）、内容完整度（是否缺章节/分卷）、需求热度（类目竞品密度）、交付便利度（体积与分享成本）。</span></div></div>
+
+<h3>6.2 分类维度设计</h3>
+<table>
+<thead><tr><th>维度</th><th>取值示例</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td>主题簇</td><td>设计素材 / 办公模板 / 教程课程 / 电子书 / 软件工具 / 音视频</td><td>决定卖什么、归到哪个闲鱼类目</td></tr>
+<tr><td>形态</td><td>单文件 / 文件包 / 成套课程</td><td>决定分享方式与定价档位</td></tr>
+<tr><td>体量</td><td>&lt;100MB / 100MB–2GB / &gt;2GB</td><td>影响提取体验，大包要拆或加价</td></tr>
+<tr><td>洁净度</td><td>自有 / 待确认 / 禁售</td><td><b>硬闸门</b>，非「自有/授权」不得进入候选池</td></tr>
+<tr><td>可售性分</td><td>0–100</td><td>排序选品队列，先卖高分</td></tr>
+</tbody>
+</table>
+
+<h3>6.3 去重与指纹</h3>
+<p>网盘返回的 <code>md5</code> 是云端哈希、<b>不是文件真实 MD5</b>，只能当弱指纹。组合指纹建议：<code>规范化文件名（去版本号/番号/后缀）+ 文件大小 + 目录路径 + 云端 md5</code>。对高价值候选再抽样下载做真实哈希校验。</p>
+
+<h2>七、商品自动生成</h2>
+
+<p>闲鱼商品的转化率 90% 取决于标题和首图。这三件套要能自动生成、也要能人工改。</p>
+
+<h3>7.1 三件套生成策略</h3>
+<table>
+<thead><tr><th>要素</th><th>生成方式</th><th>要点</th></tr></thead>
+<tbody>
+<tr><td><b>标题</b></td><td>模板骨架 + LLM 填词，≤ 30 字</td><td>结构：<code>核心词 + 数量/规格 + 格式 + 交付方式</code>。例：「PS 笔刷素材合集 1200 款 高清 PSD 网盘秒发」。带搜索词但要避开违禁词</td></tr>
+<tr><td><b>描述</b></td><td>固定结构模板 + 内容清单自动填充</td><td>四段式：<b>内容清单</b>（自动列目录树）、<b>适用人群</b>、<b>交付说明</b>（网盘链接 24h 内保存）、<b>售后声明</b>（虚拟商品发出不退，规避纠纷）</td></tr>
+<tr><td><b>图片</b></td><td>网盘 <code>thumbs</code> 缩略图 + AI 生成封面合成 3–9 张</td><td><span class="pill p-red">易踩坑</span> 闲管家要求<b>公网可访问图片 URL</b>，必须先把图传到对象存储（腾讯云 COS 复用你现有账号）</td></tr>
+<tr><td><b>价格</b></td><td>竞品价分位 + 心理价位档</td><td>先用 <code>9.9 / 19.9 / 29.9 / 49.9</code> 档位；后期按「曝光–点击–成交」调优，n8n 里可配自动调价规则</td></tr>
+<tr><td><b>类目</b></td><td>调「查询商品类目 / 商品属性」接口</td><td>类目错会直接商品异常下架，必须走官方类目树而不是猜</td></tr>
+</tbody>
+</table>
+
+<div class="card note">
+<h4>图片托管这一环别漏</h4>
+<p style="margin-bottom:0">网盘的 <code>thumbs</code> URL 有时效性，且不一定能被闲鱼侧抓取。稳妥做法：把封面图落到自家对象存储，用固定 HTTPS 域名出图。这一步不做，商品创建会一直失败且报错信息不明确。</p>
+</div>
+
+<h2>八、自动发货链路（核心中的核心）</h2>
+
+<div class="fig">
+<svg viewBox="0 0 680 300" width="100%" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>自动发货时序</title>
+<desc>买家下单后闲管家推送订单，资源中台实时生成专属分享链接并回传发货内容。</desc>
+<defs>
+<marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+</defs>
+<rect x="40" y="30" width="180" height="52" rx="10" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+<text x="130" y="49" text-anchor="middle" dominant-baseline="central" fill="#712B13" font-size="13" font-weight="500">买家下单付款</text>
+<text x="130" y="67" text-anchor="middle" dominant-baseline="central" fill="#993C1D" font-size="11">闲鱼 / 闲管家</text>
+<rect x="250" y="30" width="180" height="52" rx="10" fill="#F1EFE8" stroke="#888780" stroke-width="0.5"/>
+<text x="340" y="49" text-anchor="middle" dominant-baseline="central" fill="#2C2C2A" font-size="13" font-weight="500">Webhook 回调服务</text>
+<text x="340" y="67" text-anchor="middle" dominant-baseline="central" fill="#5F5E5A" font-size="11">验签 · 幂等 · 入队</text>
+<rect x="460" y="30" width="180" height="52" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="550" y="49" text-anchor="middle" dominant-baseline="central" fill="#3C3489" font-size="13" font-weight="500">资源中台</text>
+<text x="550" y="67" text-anchor="middle" dominant-baseline="central" fill="#534AB7" font-size="11">查资源 + 生成发货内容</text>
+<rect x="460" y="118" width="180" height="52" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="550" y="137" text-anchor="middle" dominant-baseline="central" fill="#0C447C" font-size="13" font-weight="500">百度网盘 share/set</text>
+<text x="550" y="155" text-anchor="middle" dominant-baseline="central" fill="#185FA5" font-size="11">生成专属链接 + 提取码</text>
+<rect x="250" y="118" width="180" height="52" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text x="340" y="137" text-anchor="middle" dominant-baseline="central" fill="#633806" font-size="13" font-weight="500">闲管家发货接口</text>
+<text x="340" y="155" text-anchor="middle" dominant-baseline="central" fill="#854F0B" font-size="11">无需物流发货</text>
+<rect x="40" y="118" width="180" height="52" rx="10" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.5"/>
+<text x="130" y="137" text-anchor="middle" dominant-baseline="central" fill="#27500A" font-size="13" font-weight="500">买家收到链接</text>
+<text x="130" y="155" text-anchor="middle" dominant-baseline="central" fill="#3B6D11" font-size="11">站内消息自动送达</text>
+<rect x="40" y="206" width="600" height="62" rx="10" fill="#F1EFE8" stroke="#888780" stroke-width="0.5"/>
+<text x="340" y="228" text-anchor="middle" dominant-baseline="central" fill="#2C2C2A" font-size="13" font-weight="500">台账落库 + 告警 + 退款回滚</text>
+<text x="340" y="250" text-anchor="middle" dominant-baseline="central" fill="#5F5E5A" font-size="12">订单↔资源↔分享链接 三方绑定 · 链接失效巡检 · 退款通知到达则作废该链接</text>
+<path d="M220 56L246 56" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#ar2)"/>
+<path d="M430 56L456 56" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#ar2)"/>
+<path d="M550 82L550 114" fill="none" stroke="#185FA5" stroke-width="1.5" marker-end="url(#ar2)"/>
+<path d="M460 144L434 144" fill="none" stroke="#854F0B" stroke-width="1.5" marker-end="url(#ar2)"/>
+<path d="M250 144L224 144" fill="none" stroke="#3B6D11" stroke-width="1.5" marker-end="url(#ar2)"/>
+<path d="M340 170L340 202" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#ar2)"/>
+<path d="M550 82L550 96L604 96L604 202" fill="none" stroke="#B4B2A9" stroke-width="0.5" stroke-dasharray="4 3"/>
+</svg>
+<p class="cap">图 2 · 一单一链发货：每笔订单生成独立分享链接，可追溯、可作废、可防倒卖</p>
+</div>
+
+<h3>8.1 两种发货模式对比</h3>
+<table>
+<thead><tr><th>模式</th><th>做法</th><th>优点</th><th>缺点</th><th>建议</th></tr></thead>
+<tbody>
+<tr>
+<td><b>卡密池预置</b></td>
+<td>事先批量生成 N 个「链接+提取码」灌入闲管家卡密仓库，闲管家原生扣减发货</td>
+<td>无需回调服务；闲管家挂了也能发；上线最快</td>
+<td>链接静态、无法按单追溯；一个链接被转卖就全池泄露；库存要人工补</td>
+<td><span class="pill p-amber">阶段一</span></td>
+</tr>
+<tr>
+<td><b>一单一链动态</b></td>
+<td>收到订单推送后实时调分享接口生成专属链接，回传发货内容</td>
+<td>每单独立链接、可设 24h/7天有效期、可作废、可统计转化；天然防倒卖</td>
+<td>依赖回调服务可用性与分享接口额度</td>
+<td><span class="pill p-green">目标态</span></td>
+</tr>
+</tbody>
+</table>
+
+<h3>8.2 发货内容模板</h3>
+<pre><code>【{资源名}】
+链接：https://pan.baidu.com/s/{shareKey}
+提取码：{pwd}
+
+· 请 24 小时内转存到自己的网盘，逾期链接自动失效
+· 转存后可长期反复下载
+· 虚拟商品一经发出不支持退款，介意勿拍
+· 有问题直接留言，看到秒回
+
+订单号：{orderNo}（售后凭此号）</code></pre>
+<p class="tagline">「一单一链 + 有效期 + 订单号」这套组合，是虚拟商品纠纷里最有效的证据链。</p>
+
+<h3>8.3 异常分支必须处理</h3>
+<table>
+<thead><tr><th>情况</th><th>处理</th></tr></thead>
+<tbody>
+<tr><td>分享接口额度耗尽 / 报错</td><td>降级到预置卡密池，同时发告警；发货内容标注「备用链接」</td></tr>
+<tr><td>同一订单号重复推送</td><td>幂等键 <code>order_no</code> 去重，直接返回上次发货结果，不重复建链接</td></tr>
+<tr><td>买家已申请退款</td><td>先查售后状态，若在退款流程中则<b>不发链接</b>，转人工</td></tr>
+<tr><td>链接被平台判违规下架商品</td><td>商品自动下架 → 作废该资源所有在途链接 → 通知人工复核</td></tr>
+<tr><td>闲管家返回 403/408</td><td>403 查 IP 白名单；408 校服务器时间（NTP）</td></tr>
+</tbody>
+</table>
+
+<h2>九、n8n 可视化工作流</h2>
+
+<p>用 n8n 自托管（Docker）做编排层，好处是每加一条规则都不用改代码，而且能塞进「Wait 人工审批」节点。原则：<b>n8n 只负责调 HTTP，重逻辑放自有服务</b>。</p>
+
+<table>
+<thead><tr><th>工作流</th><th>触发</th><th>节点链路</th><th>产出</th></tr></thead>
+<tbody>
+<tr>
+<td><b>WF1 盘点归类</b></td>
+<td>Cron 每日 03:00</td>
+<td>网盘递归列表 → 分批送分类引擎 → 写 resource 表 → 汇总统计</td>
+<td>资源库更新 + 微信日报（新增/归类/疑似侵权数）</td>
+</tr>
+<tr>
+<td><b>WF2 选品上架</b></td>
+<td>手动触发 / 审批后</td>
+<td>取选品队列 → 生成标题描述 → 生成封面 → 传 COS → 查类目 → 创建商品 → 上架 → 记录 product_id</td>
+<td>闲鱼在售商品 + 商品↔资源映射</td>
+</tr>
+<tr>
+<td><b>WF2b 人工审批闸门</b></td>
+<td>WF2 前置</td>
+<td>推送企业微信卡片（含草稿预览）→ Wait 节点等审批 → 通过则继续，驳回则打回</td>
+<td>避免 AI 误上架违规商品</td>
+</tr>
+<tr>
+<td><b>WF3 自动发货</b></td>
+<td>Webhook（闲管家订单推送）</td>
+<td>验签 → 幂等校验 → 查资源 → 生成专属分享 → 调发货接口 → 落台账 → 通知</td>
+<td>秒级自动发货 + 完整台账</td>
+</tr>
+<tr>
+<td><b>WF4 链接巡检</b></td>
+<td>Cron 每 6 小时</td>
+<td>取在途分享链接 → 探测有效性 → 失效则标记 → 补链或下架商品</td>
+<td>避免买家拿到死链导致纠纷</td>
+</tr>
+<tr>
+<td><b>WF5 售后台账</b></td>
+<td>售后 / 退款通知回调</td>
+<td>接收退款 → 作废对应分享链接 → 回写订单状态 → 记录损失</td>
+<td>防止「退款后仍能下载」</td>
+</tr>
+<tr>
+<td><b>WF6 运营日报</b></td>
+<td>Cron 每日 21:00</td>
+<td>聚合当日曝光/成交/退款/库存/在途链接</td>
+<td>了解卖得动什么，反哺选品</td>
+</tr>
+</tbody>
+</table>
+
+<h2>十、数据模型</h2>
+
+<table>
+<thead><tr><th>表</th><th>关键字段</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td><code>resource</code></td><td>id, fs_id, path, filename, size, category, cloud_md5, fingerprint, theme, form, cleanliness, sell_score, status, created_at</td><td>网盘资源唯一记录，status ∈ 待分类/候选/在售/归档/禁售</td></tr>
+<tr><td><code>listing</code></td><td>id, resource_id, product_id, title, desc, price, images_json, category_id, status, platform, listed_at</td><td>商品。product_id 为闲管家返回 ID</td></tr>
+<tr><td><code>share_link</code></td><td>id, resource_id, share_url, pwd, expire_at, scope(库存/订单), order_no, status, created_at</td><td><b>台账核心</b>：哪个链接服务了哪单、何时失效</td></tr>
+<tr><td><code>card_pool</code></td><td>id, card_type_id, resource_id, content, used, order_no, used_at</td><td>预置卡密池（阶段一模式）</td></tr>
+<tr><td><code>order</code></td><td>order_no, product_id, resource_id, buyer_id, amount, status, paid_at, delivered_at, refund_status</td><td>订单台账，售后追溯用</td></tr>
+<tr><td><code>delivery</code></td><td>id, order_no, share_link_id, content, channel, delivered_at, retry_count</td><td>发货明细，同时是幂等依据</td></tr>
+<tr><td><code>task_log</code></td><td>id, tool, params_hash, errno, request_id, duration_ms, dry_run, created_at</td><td>审计与排障</td></tr>
+<tr><td><code>price_rule</code></td><td>id, theme, min_price, max_price, strategy</td><td>定价规则，n8n 可读可调</td></tr>
+</tbody>
+</table>
+
+<p class="tagline">存储建议：本地开发用 SQLite 起步；上服务器直接用你现有的 PostgreSQL（10.0.0.176:15432），和 fmkj 库分 schema 隔离。</p>
+
+<h2>十一、技术选型与目录结构</h2>
+
+<div class="grid">
+<div class="mini"><h4>核心服务：Node + TypeScript</h4><p>MCP SDK 是 TS 生态；闲管家签名是纯 MD5，Node 内置 crypto 就够；和 MCP 工具层共用类型定义，一套代码两种出口。<b>不建议用 Python 重写一遍网盘客户端</b>。</p></div>
+<div class="mini"><h4>控制台：Next.js</h4><p>复用你熟悉的栈。页面：资源库、选品队列、商品草稿审批、卡密池、订单台账、工作流开关、告警中心。</p></div>
+<div class="mini"><h4>编排：n8n（Docker 自托管）</h4><p>可视化、可热改、有 Wait 审批节点、自带 cron 与 webhook。部署在腾讯云 CVM 上，与主服务同机不同容器。</p></div>
+<div class="mini"><h4>图片与部署</h4><p>图片托管用腾讯云 COS（已有账号）。服务部署到你现有的腾讯云 CVM；未来可迁 CloudBase。</p></div>
+</div>
+
+<h3>11.1 建议目录结构</h3>
+<pre><code>百度网盘mcp/
+├─ packages/
+│  ├─ bdpan-core/          # 百度网盘客户端：签名、token管家、重试、路径守卫
+│  │  ├─ src/auth.ts       #   OAuth + token 持久化与自动续期
+│  │  ├─ src/file.ts       #   list / listall / search / meta
+│  │  ├─ src/manage.ts     #   mkdir / move / rename / copy / delete
+│  │  ├─ src/upload.ts     #   precreate → upload → create、rapidupload
+│  │  └─ src/share.ts      #   创建/取消分享（付费，需额度开关）
+│  ├─ mcp-server/          # MCP 出口（stdio + SSE 双模）
+│  │  └─ src/tools/*.ts    #   每个原子工具一个文件，带权限档标记
+│  ├─ resource-hub/        # 资源中台：分类、选品、定价、草稿生成
+│  │  ├─ src/classify/     #   规则预分 + LLM 归类 + 打分
+│  │  ├─ src/listing/      #   标题/描述/图片 三件套生成
+│  │  └─ src/db/           #   schema + 迁移
+│  └─ goofish-adapter/     # 闲管家适配层：签名、限流、字段映射
+│     ├─ src/sign.ts       #   md5(appKey,bodyMd5,ts,appSecret)
+│     ├─ src/product.ts    #   创建/上架/下架/编辑库存
+│     ├─ src/order.ts      #   订单列表/详情/发货
+│     ├─ src/card.ts       #   卡密分类/卡种/库存/发卡组合
+│     └─ src/webhook.ts    #   回调验签与解析（商品/订单/售后）
+├─ apps/
+│  └─ console/             # Next.js 运营控制台
+├─ workflows/              # n8n 工作流导出 JSON，纳入版本管理
+├─ infra/
+│  ├─ docker-compose.yml   # n8n + postgres + 服务
+│  └─ .env.example
+└─ docs/                   # 本方案与接口笔记</code></pre>
+
+<h2>十二、实施路线图</h2>
+
+<table>
+<thead><tr><th>阶段</th><th>目标</th><th>交付物</th><th>验收标准</th></tr></thead>
+<tbody>
+<tr><td><b>P0 前置</b></td><td>解决资质与凭证</td><td>企业开发者认证、购买文件分享服务、闲管家订购版本+建应用+IP白名单+回调地址+上线</td><td>拿到两组可用密钥；OAuth 走通并刷新一次成功</td></tr>
+<tr><td><b>P1 网盘打通</b></td><td>AI 能盘点网盘</td><td>bdpan-core + mcp-server，接入 WorkBuddy/Claude Code</td><td>能在对话里说「盘点 /apps/xxx 下所有文件」并拿到正确结果</td></tr>
+<tr><td><b>P2 归类选品</b></td><td>资源库成型</td><td>分类引擎 + resource 表 + 选品队列 + 可售性打分</td><td>能把 1000+ 文件自动归类，并输出 Top 20 候选清单</td></tr>
+<tr><td><b>P3 商品生成</b></td><td>草稿可上架</td><td>三件套生成 + COS 图床 + 商品草稿表</td><td>生成 10 条草稿，人工看一眼就敢发</td></tr>
+<tr><td><b>P4 首次成交</b></td><td>跑通收入闭环</td><td>走路线 C：卡密池 + 闲管家原生自动发货</td><td>真实卖出 1 单并自动发出链接</td></tr>
+<tr><td><b>P5 全自动化</b></td><td>走路线 A</td><td>闲管家适配层完整实现 + WF2/WF3 + 控制台</td><td>选品到上架全自动；订单秒级自动发货；台账完整</td></tr>
+<tr><td><b>P6 规模化</b></td><td>可选，走路线 B</td><td>注册虚拟货源身份，实现货源标准接口</td><td>同一套内核可服务多个闲鱼商家</td></tr>
+</tbody>
+</table>
+
+<h2>十三、风险与合规（别跳过）</h2>
+
+<div class="card warn">
+<h4>四个真实风险</h4>
+<ol class="tight" style="margin-bottom:0">
+<li><b>版权风险（最高）</b>——卖网盘里的课程/软件/电子书极易构成侵权。闲鱼有明确的禁售商品范围，盗版资源属于重点打击对象，轻则商品下架，重则封店并可能承担法律责任。建议<b>只上架自有版权或已获授权的内容</b>，把「洁净度=禁售」做成硬闸门而不是建议。</li>
+<li><b>平台条款风险</b>——百度网盘开放平台规范明确禁止「多人共享个人网盘账号及会员权益」等行为，把网盘资源批量商业化需要你自己评估边界，并严格遵守开放平台规范。</li>
+<li><b>资质阻塞风险</b>——文件分享接口需企业认证 + 付费购买。如果无法完成，自动发货链路直接不成立，项目要立刻转向其他交付方式（如自有对象存储直链+自有站点）。</li>
+<li><b>账号与资金风险</b>——闲鱼虚拟商品退款纠纷高发。务必在商品描述里明确交付方式与退款政策，保留发货证据（订单号↔链接↔时间戳）。</li>
+</ol>
+</div>
+
+<h3>13.1 技术风险对策</h3>
+<table>
+<thead><tr><th>风险</th><th>对策</th></tr></thead>
+<tbody>
+<tr><td>refresh_token 失效（用户取消授权）</td><td>启动即探测，失效立刻告警并暂停所有写操作，避免半死不活地跑</td></tr>
+<tr><td>闲管家 QPS 10 被打满</td><td>服务端统一令牌桶，所有出网请求过队列；批量上架要错峰</td></tr>
+<tr><td>分享接口额度被烧光</td><td>按日设额度上限 + 异常用量告警；失败降级到卡密池</td></tr>
+<tr><td>AI 误判上架违规品</td><td>上架前置人工审批节点（n8n Wait），AI 只出草稿</td></tr>
+<tr><td>网盘目录结构被 AI 搞乱</td><td>写操作默认 dry_run；移动/删除类操作限制在 <code>仓/</code> 子目录内</td></tr>
+</tbody>
+</table>
+
+<h2>十四、今天就能开始的五件事</h2>
+
+<ul class="check">
+<li><b>轮换密钥</b>：SecretKey / SignKey 重置，新值入 <code>.env</code>，不上传任何聊天与仓库</li>
+<li><b>查认证类型</b>：确认 AppID 124070117 是个人还是企业认证。个人 → 立刻启动企业认证 + 咨询购买文件分享服务（这是整个项目的前置条件）</li>
+<li><b>闲管家侧准备</b>：注册 → 绑定店铺 → 确认/开通鱼小铺资质 → 订购开放平台版本 → 创建「进销存」应用 → 记下 appKey/appSecret</li>
+<li><b>OAuth 走通</b>：配好公网 HTTPS 回调（可用 CVM + 域名），拿到 access_token / refresh_token 并落库，验证自动续期</li>
+<li><b>目录规范落地</b>：在网盘建 <code>/apps/应用名/仓/{待售,在售,归档}</code>、<code>/_assets/封面</code>、<code>/_tmp</code>，把现有要卖的资源挪进去</li>
+</ul>
+
+<h2 id="appendix">附录：关键结论的官方原文依据</h2>
+
+<p>以下均为百度网盘开放平台官方文档原文摘录（抓取时间 2026-10-06），非二手资料。</p>
+
+<h3>A1 · 「文件分享是付费能力」</h3>
+<div class="card">
+<p style="margin-top:0"><b>来源</b>：《接入指南 › 计费说明》<br>
+<code>https://pan.baidu.com/union/doc/基础网盘服务/文件分享服务新/接入指南/</code>（更新时间 2026-09-10）</p>
+<blockquote style="margin:12px 0 0;padding-left:16px;border-left:3px solid var(--line);color:var(--t2)">
+「<b>文件分享服务为付费开放能力，购买服务后才可正式使用。</b>」（原文加粗）<br>
+「具体购买方式和价格可通过以下渠道咨询：1. 添加客户经理企业微信；2. 联系商务合作邮箱：<b>ext_mars-union@baidu.com</b>，工作人员将在 1～3 个工作日内联系。」
+</blockquote>
+</div>
+
+<h3>A2 · 「仅企业开发者可用」</h3>
+<div class="card">
+<p style="margin-top:0"><b>来源</b>：同上页《接入指南 › 接入流程》第 2 步「通过企业开发者实名认证」</p>
+<blockquote style="margin:12px 0 0;padding-left:16px;border-left:3px solid var(--line);color:var(--t2)">
+「<b>文件分享服务属于企业开发者专属权益，需要先完成企业开发者认证。</b>」
+</blockquote>
+<p style="margin-bottom:0">同页《注意事项》第 1 条再次强调：「文件分享服务需要完成企业开发者认证、购买服务并开通相应权限后使用。」</p>
+</div>
+
+<h3>A3 · 「创建分享链接」接口本身</h3>
+<div class="card">
+<p style="margin-top:0"><b>来源</b>：《基础网盘服务 › 文件分享服务（新）› 创建分享链接》<br>
+<code>https://pan.baidu.com/union/doc/基础网盘服务/文件分享服务新/创建分享链接/</code>（更新时间 2026-09-11）</p>
+<blockquote style="margin:12px 0;padding-left:16px;border-left:3px solid var(--line);color:var(--t2)">
+「<b>本接口为付费接口，购买文件分享服务并开通分享权限后才可正式使用</b>，计费和开通方式参见[接入指南 &gt; 计费说明]。」
+</blockquote>
+<table style="margin:12px 0">
+<tbody>
+<tr><td style="width:150px"><b>HTTP Method</b></td><td><code>POST</code></td></tr>
+<tr><td><b>HTTP URL</b></td><td><code>https://pan.baidu.com/apaas/1.0/share/set</code></td></tr>
+<tr><td><b>固定查询参数</b></td><td><code>product=netdisk</code></td></tr>
+<tr><td><b>Content-Type</b></td><td><code>multipart/form-data</code></td></tr>
+<tr><td><b>必填表单字段</b></td><td><code>appid</code> · <code>access_token</code> · <code>product</code> · <code>fsid_list</code>（JSON 字符串数组）· <code>period</code>（有效期，单位天）· <code>pwd</code>（提取码，长度 4，数字 + 小写字母）</td></tr>
+<tr><td><b>选填</b></td><td><code>remark</code>（分享备注）· <code>ticket</code>（附加权益 JSON，<code>package_type=47</code> 为极速流量包）</td></tr>
+<tr><td><b>成功返回</b></td><td><code>data.link</code> · <code>data.short_url</code> · <code>data.share_id</code> · <code>data.period</code> · <code>data.pwd</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>A4 · 最硬的证据：错误码表里的 <code>13998</code></h3>
+<div class="card">
+<p style="margin-top:0"><b>来源</b>：《文件分享服务（新）› 错误码说明 › 公共错误码》<br>
+<code>https://pan.baidu.com/union/doc/基础网盘服务/文件分享服务新/错误码/</code>（更新时间 2026-09-09）</p>
+<table style="margin:12px 0">
+<thead><tr><th>errno</th><th>错误信息</th><th>错误描述</th></tr></thead>
+<tbody>
+<tr><td><code>-6</code></td><td>LoginError</td><td>未登录或者登录无效</td></tr>
+<tr><td><code>13998</code></td><td>没有申请分享权限</td><td><b>申请开通文件分享权限</b></td></tr>
+</tbody>
+</table>
+<p style="margin-bottom:0">这条错误码是整套论断的落点：<b>分享能力不是拿到 access_token 就能用，而是要单独「申请开通权限」</b>。也就是说，即使你完成了 OAuth 授权、token 有效，未开通分享权限的调用仍会直接返回 13998。</p>
+</div>
+
+<h3>A5 · 顺带确认的两条附加限制</h3>
+<div class="card">
+<blockquote style="margin:0;padding-left:16px;border-left:3px solid var(--line);color:var(--t2)">
+<p style="margin-top:0"><b>版本限制</b>（《接入指南 › 使用限制》）：「文件分享类接口与百度网盘企业版不互通，不支持创建或者获取企业版分享的链接内容。」</p>
+<p style="margin-bottom:0"><b>频次限制</b>：「分享接口会根据用户调用行为有限制措施，但能满足用户的正常使用行为。」</p>
+</blockquote>
+</div>
+
+<div class="card note">
+<h4>需要说明的两点边界</h4>
+<ol class="tight" style="margin-bottom:0">
+<li><b>关于「旧分享服务」</b>：官方简介里提到「（注：旧的分享服务不支持）」加强权益附送，说明历史上存在过一套旧分享能力。但当前官方文档目录里<b>只有</b>《文件分享服务（新）》这一套，旧的 <code>/rest/2.0/xpan/share?method=rapidshare</code> 已不在文档树中，只在第三方博客里被提到。<b>不要把项目建立在非文档化的旧接口上</b>——它随时可能失效，且平台明令禁止绕过限制。结论按「新分享服务」为准。</li>
+<li><b>关于购买方式</b>：没有公开价目表与自助开通入口，只能通过客户经理企业微信或 <code>ext_mars-union@baidu.com</code> 走商务对接，回复周期 1～3 个工作日。这意味着<b>排期上要留出商务沟通时间</b>，不是点一下就开通。</li>
+</ol>
+</div>
+
+<hr>
+<p class="tagline">下一步建议：先做 P1（网盘打通 + MCP 工具层），它不依赖任何资质审批，可以立刻开工，并且做完之后你马上就能用自然语言盘点网盘。等 P0 的资质批下来，P4 的发货链路直接接上去即可。</p>
+
+</div>
+</body>
+</html>

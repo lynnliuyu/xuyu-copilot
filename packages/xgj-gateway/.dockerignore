@@ -1,0 +1,16 @@
+# 打包上下文里不需要的东西
+.git
+.gitignore
+node_modules
+dist
+data
+*.log
+
+# 密钥绝不进构建上下文
+.env
+.env.*
+!.env.example
+
+# 编辑器/系统垃圾
+.DS_Store
+*.swp

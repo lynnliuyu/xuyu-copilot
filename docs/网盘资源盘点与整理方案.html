@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>网盘资源盘点与整理方案</title>
+<style>
+:root{--bg:#F7F6F3;--card:#FFF;--line:#E4E2DC;--t1:#1E1E1C;--t2:#5F5E5A;--t3:#8A8880;
+--red:#A32D2D;--red-bg:#FCEBEB;--amber:#854F0B;--amber-bg:#FAEEDA;--green:#3B6D11;--green-bg:#EAF3DE;
+--blue:#185FA5;--blue-bg:#E6F1FB;--gray-bg:#F1EFE8;--coral:#993C1D;--coral-bg:#FAECE7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);font:15px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+.wrap{max-width:1020px;margin:0 auto;padding:48px 28px 96px}
+header{border-bottom:3px solid var(--t1);padding-bottom:24px;margin-bottom:36px}
+h1{font-size:29px;margin:0 0 10px;font-weight:600;line-height:1.3}
+.sub{color:var(--t2);margin:0}
+.meta{margin-top:14px;font-size:13px;color:var(--t3);display:flex;gap:18px;flex-wrap:wrap}
+h2{font-size:20px;font-weight:600;margin:50px 0 16px;padding-left:13px;border-left:4px solid var(--t1);line-height:1.3}
+h3{font-size:16px;font-weight:600;margin:28px 0 12px}
+p{margin:12px 0}
+ul,ol{margin:12px 0;padding-left:22px}
+li{margin:6px 0}
+code{background:#EAE8E2;padding:2px 6px;border-radius:4px;font:12.5px/1.5 ui-monospace,Menlo,monospace;word-break:break-all}
+pre{background:#2C2C2A;color:#E8E6E0;padding:15px 18px;border-radius:10px;overflow-x:auto;font:12.5px/1.7 ui-monospace,Menlo,monospace;margin:14px 0}
+pre code{background:none;color:inherit;padding:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:16px 0}
+.card.warn{background:var(--red-bg);border-color:#F09595}
+.card.ok{background:var(--green-bg);border-color:#C0DD97}
+.card.note{background:var(--blue-bg);border-color:#B5D4F4}
+.card.amber{background:var(--amber-bg);border-color:#FAC775}
+.card h4{margin:0 0 10px;font-size:15px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th{background:var(--gray-bg);text-align:left;padding:10px 13px;font-weight:600;font-size:13px;border-bottom:1px solid var(--line)}
+td{padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--t2)}
+tr:last-child td{border-bottom:none}
+td strong{color:var(--t1)}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.p-red{background:#F7C1C1;color:#791F1F}
+.p-green{background:#C0DD97;color:#27500A}
+.p-amber{background:#FAC775;color:#633806}
+.p-gray{background:#D3D1C7;color:#444441}
+.p-blue{background:#B5D4F4;color:#0C447C}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+@media(max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.stat .n{font-size:22px;font-weight:600;line-height:1.2}
+.stat .l{font-size:12.5px;color:var(--t2);margin-top:4px}
+.tagline{font-size:13px;color:var(--t3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+<h1>网盘资源盘点与整理方案</h1>
+<p class="sub">基于真实 API 扫描结果 —— 账号「她叫Matilda」· 应用 124070117</p>
+<div class="meta"><span>扫描时间 2026-10-06</span><span>遍历方式 list 自建 BFS</span><span>目录树深度 2–3</span></div>
+</header>
+
+<div class="card ok">
+<h4>结论摘要</h4>
+<ol style="margin-bottom:0">
+<li>网盘里 <b>约 95% 是手机相册自动备份</b>（iPhone + iPad 合计 10,896 个文件 / 102.85 GB），与售卖无关，建议整体归档。</li>
+<li>真正的资源集中在 <code>/淘宝出售类</code>（218 文件 / 70.87 GB）与 <code>/我的资源</code>（189 文件 / 13.93 GB）。</li>
+<li><b>可售性最高的是 <code>procreate室内设计笔刷</code></b>（54 文件 / 1.48 GB）：结构完整（笔刷 + 教程 + 导入说明）、需求明确、交付轻。<b>但必须先确认版权</b>——目录里留有他人淘宝店的书签。</li>
+<li><b>发现 10 处明确侵权/违规项</b>，文件名已自证（含 <code>crack</code>、<code>Crked</code>，以及 Kitbash3D、迪士尼/任天堂/原神等 IP 素材），必须排除。</li>
+<li><b>分享链接生成能力是付费且限企业开发者</b>（`errno=13998` 未开通分享权限），这是自动发货链路的前置条件，需要单独走商务开通。</li>
+<li><b>整理动作已执行完毕</b>：14 项目录移动全部成功，根目录从 21 项精简到 11 项——详见 §6。</li>
+</ol>
+</div>
+
+<div class="card note">
+<h4>关于本轮整理</h4>
+<p style="margin-bottom:0">全部是<b>移动</b>操作，没有任何删除。移动是网盘的元数据操作，瞬时完成且可逆——把目录反向移回原位置即可完全还原。唯一有意没动的是 <code>来自：iPhone</code> 与 <code>来自：iPad</code>（手机自动备份的落地目录，见 §6.3）。</p>
+</div>
+
+<h2>一、规模概况</h2>
+
+<div class="grid">
+<div class="stat"><div class="n">10,950</div><div class="l">可见文件数</div></div>
+<div class="stat"><div class="n">105.17 GB</div><div class="l">根目录层统计</div></div>
+<div class="stat"><div class="n">15</div><div class="l">顶层目录</div></div>
+<div class="stat"><div class="n">70.87 GB</div><div class="l">淘宝出售类</div></div>
+</div>
+
+<table>
+<thead><tr><th>顶层目录</th><th>文件数</th><th>体积</th><th>性质判断</th></tr></thead>
+<tbody>
+<tr><td><code>/来自：iPhone</code></td><td>6,796</td><td>55.28 GB</td><td><span class="pill p-gray">私人相册</span> 5,101 个 .mov</td></tr>
+<tr><td><code>/来自：iPad</code></td><td>4,100</td><td>47.57 GB</td><td><span class="pill p-gray">私人相册</span> .livp / .heic</td></tr>
+<tr><td><code>/HA自媒体分享</code></td><td>2</td><td>1.35 GB</td><td><span class="pill p-blue">开源可分发</span> haos 系统镜像</td></tr>
+<tr><td><code>/淘宝出售类</code></td><td>218</td><td><b>70.87 GB</b></td><td><span class="pill p-amber">核心资源池</span> 12 个子目录</td></tr>
+<tr><td><code>/我的资源</code></td><td>189</td><td><b>13.93 GB</b></td><td><span class="pill p-amber">核心资源池</span> 6 个子目录</td></tr>
+<tr><td><code>/材质系列</code></td><td>10</td><td>441.0 MB</td><td><span class="pill p-blue">自用素材</span></td></tr>
+<tr><td><code>/立面系列</code></td><td>16</td><td>115.7 MB</td><td><span class="pill p-blue">自用素材</span></td></tr>
+<tr><td><code>/平面系列</code></td><td>14</td><td>54.9 MB</td><td><span class="pill p-blue">自用素材</span></td></tr>
+<tr><td><code>/室内设计专用Procreate笔刷</code></td><td>3</td><td>27.7 MB</td><td><span class="pill p-amber">资源池</span> 与 §4 同系列</td></tr>
+<tr><td><code>/来自：本地电脑</code></td><td>1</td><td>21.0 MB</td><td><span class="pill p-gray">私人</span> 含 bilibili上传 等 6 子目录</td></tr>
+<tr><td><code>/blender软件</code></td><td>1</td><td>39 B</td><td><span class="pill p-amber">工具</span> 4 子目录（安装包/免安装版/插件）</td></tr>
+<tr><td><code>/小米智能家居设计方案…</code></td><td>0</td><td>0 B</td><td><span class="pill p-amber">资源池</span> 2 个子目录待展开</td></tr>
+<tr><td><code>/新版chatGPT安装</code></td><td>0</td><td>0 B</td><td><span class="pill p-amber">待核</span> mac / windows / 账号管理工具</td></tr>
+<tr><td><code>/qq空间恢复</code></td><td>0</td><td>0 B</td><td><span class="pill p-gray">待清理</span> 空壳目录</td></tr>
+<tr><td><code>/云一朵知识问答</code></td><td>0</td><td>0 B</td><td><span class="pill p-gray">待清理</span> 空目录</td></tr>
+</tbody>
+</table>
+
+<div class="card amber">
+<h4>一处对不上的数字，需要你核实</h4>
+<p style="margin-bottom:0">容量接口返回「已用 <b>1207.25 GB</b>」，但本次 API 可见内容合计约 <b>190 GB</b>。差距约 1000 GB，可能来自：① 未扫到的更深层目录；② 回收站占用；③ 其他未纳入遍历的区段。建议在网盘客户端看一眼「回收站」和总占用明细——这个差距值得查清楚。</p>
+</div>
+
+<h2>二、四类分法</h2>
+
+<table>
+<thead><tr><th>类别</th><th>包含目录</th><th>处置</th></tr></thead>
+<tbody>
+<tr><td><b>A · 私人资料</b><br><span class="tagline">约 102.85 GB</span></td><td><code>/来自：iPhone</code>、<code>/来自：iPad</code>、<code>/来自：本地电脑</code>、<code>/来自：AI笔记</code>、<code>/云一朵知识问答</code>、<code>/qq空间恢复</code></td><td>整体归入 <code>/03-归档-设备备份/</code>，并<b>排除出售候选池</b>，避免污染选品逻辑</td></tr>
+<tr><td><b>B · 资源池</b><br><span class="tagline">约 85 GB</span></td><td><code>/淘宝出售类</code> 全部 12 子目录 + <code>/我的资源</code> + <code>/材质系列</code> 等设计素材</td><td>逐项过版权闸门，通过的进 <code>/00-待售资源/</code></td></tr>
+<tr><td><b>C · 工具与教程</b></td><td>Codex 安装包与汉化包、CC-Switch、Blender 本体、Home Assistant APK/镜像、猫抓插件</td><td>可作<b>引流品/赠品</b>；本身多为开源或免费，单独售卖价值低</td></tr>
+<tr><td><b>D · 待清理</b></td><td>10 处侵权项（见 §3）、<code>/qq空间恢复</code>、<code>/云一朵知识问答</code>、<code>/淘宝出售类/Shopee</code>（空）</td><td>人工复核后删除</td></tr>
+</tbody>
+</table>
+
+<h2>三、必须排除清单（10 项，文件名已自证）</h2>
+
+<div class="card warn">
+<h4>这些不要上架，也不要留着共享——风险是实打实的</h4>
+</div>
+
+<table>
+<thead><tr><th>路径</th><th>判定证据</th><th>风险</th></tr></thead>
+<tbody>
+<tr><td><code>/Parallels Desktop Business Edition 27.0.0.58628 Crked - Digit77.com.dmg</code></td><td>文件名含 <b>Crked</b>（cracked），且带来源站点后缀</td><td><span class="pill p-red">破解软件</span></td></tr>
+<tr><td><code>/淘宝出售类/KNX6.2/ETS 6.2.0 crack.zip</code></td><td>文件名含 <b>crack</b>；同目录还有 ETS 6.2.0 官方安装包</td><td><span class="pill p-red">破解软件</span></td></tr>
+<tr><td><code>/淘宝出售类/素材类/第6650期/</code>（8 文件，<b>44.97 GB</b>）</td><td>Kitbash3D - Mission to Minerva（UE/MAX/FBX/Blender 四种格式）—— Kitbash3D 是商业素材库，许可<b>明确禁止转售</b></td><td><span class="pill p-red">商业素材转售</span></td></tr>
+<tr><td><code>/淘宝出售类/素材类/可打印stl文件/</code>（12 文件，<b>15.70 GB</b>）</td><td>Dame Aylin - <b>Baldur's Gate 3</b>、Survivor - <b>Rust</b>、Tacitus(Lovemace) 等——游戏 IP 角色模型，附 license.txt</td><td><span class="pill p-red">游戏 IP 侵权</span></td></tr>
+<tr><td><code>/淘宝出售类/素材类/polyhavenassets/</code>、<code>/Quad Remesher 1.3 win/</code></td><td>目录内全是 <code>GFXfather.com.url</code>、<code>Join Our Secret Source.url</code>——盗版素材站的来源标记</td><td><span class="pill p-red">来源可疑</span></td></tr>
+<tr><td><code>/淘宝出售类/设计 AI/</code>（6.58 GB）</td><td>Topaz Studio v2.3.2、Substance 3D Painter 8.3/10.1、HitPaw、Aiarty Image Enhancer、Topaz 家族</td><td><span class="pill p-red">商业软件</span></td></tr>
+<tr><td><code>/淘宝出售类/办公类/Xmind/</code>（884.8 MB）</td><td>Xmind2024.rar、v24.01.dmg、最新v24.03.dmg</td><td><span class="pill p-red">商业软件</span></td></tr>
+<tr><td><code>/淘宝出售类/实用类/</code>（403.7 MB）</td><td>CleverGet、Internet Download Manager、BandizipPro、Metashape Professional、Cubase Pro v14、Typora、4K Video Downloader</td><td><span class="pill p-red">商业软件</span></td></tr>
+<tr><td><code>/淘宝出售类/插件类/Adobe全家桶插件一键安装…</code></td><td>Adobe 系列插件合集——Adobe 明确禁止此类分发</td><td><span class="pill p-red">明确侵权</span></td></tr>
+<tr><td><code>/淘宝出售类/游戏/雀魂换肤/</code></td><td>MajsoulMax 换肤工具 + Proxifier 代理工具 + 「解锁所有角色皮肤」教程</td><td><span class="pill p-red">游戏外挂性质</span></td></tr>
+</tbody>
+</table>
+
+<h3>3.1 还需要你确认的三项</h3>
+<table>
+<thead><tr><th>项目</th><th>疑点</th></tr></thead>
+<tbody>
+<tr><td><code>/我的资源/Codex AI编程实战课/</code><br>86 文件 / 8.04 GB</td><td>完整的付费课程视频（预热课 / 入门 / 实操案例 / 变现模式共 10 个章节）。<b>如果这是你自己购买的课，转售即侵权</b>；只有你是原创作者才可上架。</td></tr>
+<tr><td><code>/我的资源/procreate室内设计笔刷…/</code><br>54 文件 / 1.48 GB</td><td>目录内有 <code>淘宝店，小新的宝藏屋.webloc</code> 书签，暗示这套笔刷<b>可能购自或搬运自他人店铺</b>。它的商业价值最高，所以版权确认也最要紧。</td></tr>
+<tr><td><code>/淘宝出售类/新版chatGPT安装/顶级账号管理工具Cockpit.Tools</code></td><td>「顶级账号管理工具」的名称暗示可能涉及账号共享或盗号工具，需核实具体功能。</td></tr>
+</tbody>
+</table>
+
+<h2>四、可售候选评级</h2>
+
+<p>评级维度：<b>需求热度</b>（闲鱼搜的人多不多）、<b>版权洁净度</b>（能否合法转售）、<b>交付便利度</b>（体积与提取体验）、<b>结构完整度</b>（有没有教程/说明）。</p>
+
+<table>
+<thead><tr><th>资源</th><th>规模</th><th>结构</th><th>版权</th><th>评级</th></tr></thead>
+<tbody>
+<tr>
+<td><b>procreate室内设计笔刷</b><br><span class="tagline">/我的资源/ 下</span></td>
+<td>54 文件<br>1.48 GB</td>
+<td>★★★★★<br>材质/立面/平面/灯光/线条 5 类笔刷 + 6 段教程 + 导入说明</td>
+<td><span class="pill p-amber">待确认</span></td>
+<td><b>首选</b>——需求明确、交付轻，先解决版权即可上</td>
+</tr>
+<tr>
+<td><b>AI 工作流类</b></td>
+<td>9 文件<br>64.6 MB</td>
+<td>★★★★<br>sd-webui 启动器 + AnimateDiff / IPAdapter / jerry davos 四组工作流 JSON</td>
+<td><span class="pill p-amber">待确认</span></td>
+<td><b>次选</b>——体积小、AI 概念热，JSON 可打包出售</td>
+</tr>
+<tr>
+<td><b>材质 / 立面 / 平面系列</b></td>
+<td>40 文件<br>611 MB</td>
+<td>★★★<br>.brushset 文件为主</td>
+<td><span class="pill p-amber">待确认</span></td>
+<td>可与 Procreate 笔刷打包成套出售</td>
+</tr>
+<tr>
+<td><b>小米智能家居设计方案</b></td>
+<td>待展开<br>2 个版本</td>
+<td>★★★<br>全屋灯光点位 / 设备清单 / 开关系统</td>
+<td><span class="pill p-amber">待确认</span></td>
+<td>赛道好（智能家居 + 小红书同款需求），确认是否自有方案</td>
+</tr>
+<tr>
+<td><b>blender 插件与教程包</b></td>
+<td>20 文件<br>125.6 MB</td>
+<td>★★★★<br>插件 + 使用教程视频 + 测试文件</td>
+<td><span class="pill p-red">高风险</span><br>Quad Remesher、Auto-Rig Pro 是商业插件</td>
+<td>只能售「教程与安装服务」，不能售插件本体</td>
+</tr>
+<tr>
+<td><b>Codex 安装包 + 汉化包</b></td>
+<td>39 文件<br>4.3 GB</td>
+<td>★★★★<br>Win/Mac 安装包 + MIT 汉化工具 + PDF 教程</td>
+<td><span class="pill p-green">较干净</span><br>客户端免费、汉化工具 MIT</td>
+<td>适合做<b>引流品</b>（9.9 元档），无版权障碍</td>
+</tr>
+<tr>
+<td><b>codex和claude安装配置教程</b></td>
+<td>4 文件<br>50.4 MB</td>
+<td>★★★<br>CC-Switch 工具 + 两份配置指南 PDF</td>
+<td><span class="pill p-green">较干净</span></td>
+<td>同上，可组合成「AI 编程环境搭建」包</td>
+</tr>
+<tr>
+<td><b>Home Assistant（APK / 镜像）</b></td>
+<td>2+2 文件<br>1.42 GB</td>
+<td>★★<br>安卓 APK、haos 系统镜像</td>
+<td><span class="pill p-green">可分发</span><br>Apache 2.0</td>
+<td>免费开源，单独售卖价值低，适合做赠品</td>
+</tr>
+<tr>
+<td><b>蛇年设计素材</b></td>
+<td>2 子目录</td>
+<td>★★<br>2025 蛇年展板 PS 模版 + 艺术字 70 款</td>
+<td><span class="pill p-amber">待确认</span></td>
+<td><span class="pill p-red">时效已过</span> 2026 年已无需求，留作改版素材</td>
+</tr>
+<tr>
+<td><b>素材类 · 散落模型</b><br><span class="tagline">/淘宝出售类/素材类/</span></td>
+<td>125 文件<br>62.52 GB</td>
+<td>★<br>121 个散落 zip，命名混乱、大量重复</td>
+<td><span class="pill p-red">高风险</span><br>见下</td>
+<td>先做版权清洗，再谈上架</td>
+</tr>
+</tbody>
+</table>
+
+<h3>4.1 「素材类」逐项体检结果</h3>
+<p>这个目录 62.52 GB，看着最像「资源」，实际是全盘风险最高的地方。逐项判定：</p>
+
+<table>
+<thead><tr><th>来源标记</th><th>示例文件</th><th>判定</th></tr></thead>
+<tbody>
+<tr><td><code>-wwwvecarzcom.zip</code><br>（约 10 个车模型）</td><td>bmw-m-hybrid-v8、toyota-gr-yaris-rally-wrc、porsche-918-spyder、nissan-skyline-r34-gtr、mclaren-solus-gt、mazda-rx-7、subaru-brz-gt3</td><td><span class="pill p-red">付费车模型站</span> veCarz 是商业模型站，未经授权转售侵权</td></tr>
+<tr><td>游戏 / 动漫 IP 模型</td><td>blue-archive-kasumizawa-miyu（蔚蓝档案）、buzz-lightyear-brawl-stars（迪士尼 × 荒野乱斗）、tramp-disney（迪士尼）、海贼王海盗船、fnaf-hw2-jackie（FNAF）、genshin-style-anime-female（原神风格）、animal-crossing-atlas-diorama（动物森友会）、bloody-bunny</td><td><span class="pill p-red">IP 侵权</span> 建议整体排除</td></tr>
+<tr><td>Sketchfab 类下载</td><td>lowpoly-rocks-1、tiny-isometric-room、mechanical-rgb-keyboard、fantasy-town、taiwan_style_signboard、japanese-horyu-ji-temple-replica、ancient-chinese-courtyard-park 等</td><td><span class="pill p-amber">需逐个查许可</span> Sketchfab 上 CC0/CC-BY 可分发，但商用与转售条款各异，必须逐个确认</td></tr>
+<tr><td>开源工具</td><td>blender-4.3.1-windows-x64.msi、blender-2.80-windows32.msi、blenderkit-v3.13.0.zip、cat-catch-2.5.6.zip（猫抓）</td><td><span class="pill p-green">可分发</span> 开源，但无售卖价值</td></tr>
+<tr><td>待核</td><td><code>tsetup-x64.5.9.0.exe</code>（两个副本）、<code>19665746-1-15.flv</code>、各类微信截图</td><td><span class="pill p-amber">不明</span> 建议清理截图与重复文件</td></tr>
+</tbody>
+</table>
+
+<p class="tagline">另外注意：目录内存在大量重复文件，例如 <code>bmw-m-hybrid-v8-…zip</code> 与 <code>…(1).zip</code>、<code>mechanical_rgb_keyboard.zip</code> 与 <code>mechanical-rgb-keyboard.zip</code>、<code>longboard_texturing_practice.zip</code> 与 <code>longboard-texturing-practice.zip</code>、<code>bloody-bunny.zip</code> 与 <code>bloody_bunny.zip</code>。整理时可直接去重。</p>
+
+<h2>五、建议的目标目录结构</h2>
+
+<pre><code>/
+├─ 00-待售资源/                 ← 只放版权确认通过的
+│  ├─ Procreate室内设计笔刷/
+│  ├─ AI工作流/
+│  ├─ Blender教程与安装服务/
+│  └─ 智能家居方案/
+├─ 01-自用素材/                 ← 素材类清洗后留存的
+│  ├─ 3D模型-可商用/
+│  └─ 3D模型-待查许可/
+├─ 02-工具与教程/               ← Codex / Claude / Blender / HA
+├─ 03-归档-设备备份/            ← iPhone / iPad / 本地电脑
+├─ 99-待清理/                   ← 侵权项与废弃目录，复核后删除
+└─ _assets/封面/                ← 售卖封面图（后续接图床）</code></pre>
+
+<p>这样分的好处：<b>选品逻辑只扫 <code>00-待售资源/</code></b>，不用每次在海量私人相册和侵权素材里过滤，扫描能从十几分钟降到几秒。</p>
+
+<h2>六、整理已执行（附能力边界更正）</h2>
+
+<div class="card ok">
+<h4>更正：上一版报告说「AI 改不了你的文件」——这个结论是错的，已经推翻</h4>
+<p>当时的判断基于一组错误结论。真正的原因不是权限，而是<b>百度 xpan 写接口的参数位置有反直觉的约定</b>：</p>
+<table style="margin-bottom:0">
+<thead><tr><th>参数放法</th><th>结果</th></tr></thead>
+<tbody>
+<tr><td><code>method</code> 放进 body</td><td><code>HTTP 400 error_code=3 Unsupported open api</code>（误判为"接口未开通"）</td></tr>
+<tr><td>所有参数都放 query</td><td><code>errno=2</code> 参数错误</td></tr>
+<tr><td><b><code>method</code> 放 query + 其余参数放 body</b></td><td><b><code>errno=0</code> 成功 ✅</b></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>逐接口确认后的正确写法：</p>
+<pre><code>mkdir        : query = method, access_token
+               body  = path, isdir=1, rtype
+filemanager  : query = method, access_token, opera, async
+               body  = filelist(JSON)</code></pre>
+
+<h3>6.1 实际执行结果：14 项移动，全部成功</h3>
+
+<table>
+<thead><tr><th>动作</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><b>新建</b></td><td><code>/00-资源池</code>、<code>/01-工具与教程</code>、<code>/09-归档</code>、<code>/99-侵权待复核</code></td></tr>
+<tr><td><b>移入 <code>/00-资源池</code></b></td><td>淘宝出售类、我的资源、材质系列、立面系列、平面系列、室内设计专用Procreate笔刷、小米智能家居设计方案…（7 项）</td></tr>
+<tr><td><b>移入 <code>/01-工具与教程</code></b></td><td>blender软件、新版chatGPT安装、HA自媒体分享（3 项）</td></tr>
+<tr><td><b>移入 <code>/09-归档</code></b></td><td>来自：本地电脑、来自：AI笔记、云一朵知识问答、qq空间恢复（4 项）</td></tr>
+</tbody>
+</table>
+
+<p><b>根目录从 21 项精简到 11 项</b>：现在是 4 个分类目录 + <code>apps</code> + 两个设备备份目录 + 4 个散落文件。<br>
+<b>移动可逆</b>——反向 move 即可还原，且没有任何删除操作。</p>
+
+<h3>6.2 另外发现：应用目录已就位</h3>
+<p>扫描中发现 <code>/apps/闲鱼商品分享链接管理</code> 已存在 —— 这就是本应用的专属目录，也就是「我的应用数据/闲鱼商品分享链接管理」。已写入 <code>.env</code> 的 <code>BDPAN_APP_NAME</code>。</p>
+<p>基于它建立好了规范目录树（上传接口 <code>precreate</code> 只支持这个目录，所以这是后续传封面、放卡密文件的前置条件）：</p>
+<pre><code>/apps/闲鱼商品分享链接管理/
+├─ 仓/
+│  ├─ 待售/
+│  ├─ 在售/
+│  └─ 归档/
+├─ _assets/
+│  └─ 封面/
+└─ _tmp/</code></pre>
+
+<h3>6.3 有意没动的东西</h3>
+<div class="card amber">
+<p style="margin:0"><code>/来自：iPhone</code>（55.28 GB）与 <code>/来自：iPad</code>（47.57 GB）<b>保持原位没动</b>。这两个是网盘 App 手机自动备份的落地目录，改路径可能影响手机端的备份任务。如果你确认不再需要手机自动备份，或者愿意在手机上重设备份目录，再告诉我，我可以把它们也归入 <code>/09-归档/</code>。</p>
+</div>
+
+<h2>七、下一步</h2>
+<table>
+<thead><tr><th>优先级</th><th>动作</th><th>为什么</th></tr></thead>
+<tbody>
+<tr><td><b>P0</b></td><td>确认 Procreate 笔刷的版权来源</td><td>它是最值得卖的一项，版权一通就能上架</td></tr>
+<tr><td><b>P0</b></td><td>把 §3 的 10 项侵权清单移入 <code>/99-侵权待复核/</code></td><td>目录我已建好；具体搬哪些需要你点头，我不擅自判定侵权</td></tr>
+<tr><td><b>P1</b></td><td>核实「已用 1207 GB vs 可见 190 GB」的差距</td><td>可能藏着重要数据，也可能只是回收站</td></tr>
+<tr><td><b>P1</b></td><td>决定 <code>来自：iPhone</code> / <code>来自：iPad</code> 是否也归档</td><td>取决于你是否还在用手机自动备份</td></tr>
+<tr><td><b>P2</b></td><td>在 <code>/00-资源池</code> 内做子目录归一 + 去重</td><td>素材类里有大量重复文件可清理</td></tr>
+<tr><td><b>P2</b></td><td>为通过版权审核的资源生成闲鱼商品草稿</td><td>进入项目正式目标：上架 + 自动发货</td></tr>
+</tbody>
+</table>
+
+<h3>7.1 可复用的脚本</h3>
+<pre><code>npx tsx scripts/tree.ts --path=/ --depth=2        # 目录树（带体积聚合）
+npx tsx scripts/tree.ts --path=/00-资源池 --depth=4 --files=5
+npx tsx scripts/list-dir.ts "/00-资源池/淘宝出售类"   # 列单目录清单
+npx tsx scripts/organize.ts                       # 整理方案 dry-run
+npx tsx scripts/organize.ts --apply               # 正式执行整理
+npx tsx scripts/check-interfaces.ts               # 复验接口边界</code></pre>
+
+<hr>
+<p class="tagline">本报告基于 2026-10-06 的真实 API 调用结果生成。原始盘点数据见 <code>out/scan-d2.json</code>；接口边界可随时用 <code>npx tsx scripts/check-interfaces.ts</code> 复验。</p>
+
+</div>
+</body>
+</html>

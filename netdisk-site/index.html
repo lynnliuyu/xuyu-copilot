@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>资源库 · 百度网盘</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --panel:#fff; --panel-2:#fafbfc; --line:#e8eaee;
+    --fg:#1b1e23; --fg-2:#5a616e; --fg-3:#8c94a2;
+    --accent:#5b5bd6; --accent-2:#7c3aed; --accent-soft:#eeeefc;
+    --shadow:0 1px 2px rgba(16,24,40,.04),0 6px 18px rgba(16,24,40,.06);
+    --shadow-h:0 4px 10px rgba(16,24,40,.08),0 14px 30px rgba(16,24,40,.12);
+    --radius:14px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#131519; --panel:#1b1e24; --panel-2:#20242b; --line:#2a2f38;
+      --fg:#e8eaf0; --fg-2:#9fa8b6; --fg-3:#727b89;
+      --accent:#8f8ff5; --accent-2:#a78bfa; --accent-soft:#242542;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.28);
+      --shadow-h:0 6px 14px rgba(0,0,0,.35),0 18px 40px rgba(0,0,0,.4);
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--fg);
+    font:14px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  /* ---------- 顶栏 ---------- */
+  .top{
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+    padding:13px 24px;background:var(--panel);border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:30;
+  }
+  .brand{
+    font-size:17px;font-weight:700;letter-spacing:.2px;display:flex;align-items:center;gap:10px;
+    background:linear-gradient(92deg,var(--accent),var(--accent-2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .brand .badge{
+    width:26px;height:26px;border-radius:8px;flex:none;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:grid;place-items:center;color:#fff;font-size:13px;-webkit-text-fill-color:#fff;
+  }
+  .stats{display:flex;gap:18px;color:var(--fg-2);font-size:12.5px;flex-wrap:wrap}
+  .stats b{color:var(--fg);font-weight:650;font-variant-numeric:tabular-nums}
+  .search{margin-left:auto;position:relative}
+  .search input{
+    width:320px;max-width:44vw;padding:9px 14px 9px 34px;border:1px solid var(--line);
+    border-radius:10px;background:var(--panel-2);color:var(--fg);font-size:13.5px;outline:none;
+  }
+  .search input:focus{border-color:var(--accent);background:var(--panel);box-shadow:0 0 0 3px var(--accent-soft)}
+  .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:.45}
+  /* ---------- 布局 ---------- */
+  .wrap{display:flex;align-items:flex-start;max-width:1560px;margin:0 auto;padding:20px 24px 70px;gap:22px}
+  .side{
+    width:262px;flex:0 0 262px;background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);padding:10px;position:sticky;top:76px;
+    max-height:calc(100vh - 96px);overflow:auto;
+  }
+  .side h4{margin:8px 10px;font-size:11px;letter-spacing:1px;color:var(--fg-3);text-transform:uppercase}
+  .node{
+    display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:9px;cursor:pointer;
+    color:var(--fg-2);font-size:13px;user-select:none;
+  }
+  .node:hover{background:var(--panel-2);color:var(--fg)}
+  .node.on{background:var(--accent-soft);color:var(--accent);font-weight:650}
+  .node .cnt{margin-left:auto;font-size:11px;color:var(--fg-3);font-variant-numeric:tabular-nums}
+  .node .tw{width:13px;text-align:center;opacity:.55;font-size:10px}
+  /* 侧栏里的分类/应用图标（有图就用图，没有才用 emoji） */
+  .node img.ni{width:17px;height:17px;border-radius:4.5px;flex:none;display:block;object-fit:contain}
+  .kids{margin-left:13px;border-left:1px solid var(--line);padding-left:4px}
+  .kids.hide{display:none}
+  main{flex:1;min-width:0}
+  /* ---------- 工具栏 ---------- */
+  .crumb{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:13px;color:var(--fg-2);margin:2px 0 14px}
+  .crumb a{color:var(--accent);cursor:pointer;text-decoration:none}
+  .crumb a:hover{text-decoration:underline}
+  .crumb span.sep{color:var(--fg-3)}
+  .bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{
+    padding:5px 13px;border:1px solid var(--line);border-radius:999px;background:var(--panel);
+    color:var(--fg-2);font-size:12.5px;cursor:pointer;
+  }
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .chip.on{background:linear-gradient(135deg,var(--accent),var(--accent-2));border-color:transparent;color:#fff;font-weight:600}
+  .bar .n{color:var(--fg-3);font-size:12.5px;margin-left:auto}
+  /* ---------- 卡片墙 ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:16px}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;
+    transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
+  }
+  .card:hover{transform:translateY(-3px);box-shadow:var(--shadow-h);border-color:transparent}
+  .thumb{
+    position:relative;aspect-ratio:3/2;background:var(--panel-2);overflow:hidden;
+    display:grid;place-items:center;border-bottom:1px solid var(--line);
+  }
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb img[src$=".svg"]{object-fit:contain;background:#101827}
+  .thumb.app{padding:16px;background:linear-gradient(160deg,#fff,#f1f2f6)}
+  .thumb.app img{object-fit:contain;border-radius:22%}
+  .thumb .tile{
+    width:100%;height:100%;display:grid;place-items:center;color:#fff;
+    font-size:34px;font-weight:700;letter-spacing:1px;text-shadow:0 1px 6px rgba(0,0,0,.18);
+  }
+  .thumb .fav{
+    position:absolute;left:8px;top:8px;display:flex;gap:5px;flex-wrap:wrap;font-size:11px;font-weight:600;
+  }
+  .thumb .fav span{
+    background:rgba(15,18,25,.62);color:#fff;padding:3px 8px;border-radius:999px;
+  }
+  .thumb .fav span.ver{background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+  .card .body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:4px;flex:1}
+  .card .t{
+    font-size:13px;font-weight:620;line-height:1.35;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .card:hover .t{color:var(--accent)}
+  .card .d{
+    font-size:11.5px;color:var(--fg-3);line-height:1.45;
+    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .card .f{
+    margin-top:auto;display:flex;align-items:center;flex-wrap:wrap;gap:8px;color:var(--fg-3);font-size:11.5px;
+    font-variant-numeric:tabular-nums;
+  }
+  .card .f span{white-space:nowrap}
+  .card .f .cp{
+    margin-left:auto;border:1px solid var(--line);background:var(--panel);color:var(--fg-2);
+    border-radius:7px;padding:2px 8px;font-size:11.5px;cursor:pointer;opacity:1;width:100%;margin-top:4px;transition:opacity .15s;
+  }
+  .card:hover .cp{opacity:1}
+  .card .f .cp:hover{border-color:var(--accent);color:var(--accent)}
+  .card .f .cp.ok{border-color:#2f9e63;color:#2f9e63;opacity:1}
+  @media (prefers-color-scheme:dark){
+    .thumb.app{background:linear-gradient(160deg,#22262e,#191c22)}
+  }
+  /* ---------- 文件列表 ---------- */
+  h3.sec{
+    margin:26px 0 11px;font-size:12px;letter-spacing:1px;color:var(--fg-3);
+    text-transform:uppercase;font-weight:650;
+  }
+  h3.sec:first-child{margin-top:0}
+  .list{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .row{display:flex;align-items:center;gap:12px;padding:10px 15px;border-top:1px solid var(--line)}
+  .row:first-child{border-top:0}
+  .row:hover{background:var(--panel-2)}
+  .row .ico{width:22px;flex:0 0 22px;text-align:center;font-size:15px}
+  .row .nm{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .sz{color:var(--fg-2);font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:76px;text-align:right}
+  .row .dt{color:var(--fg-3);font-size:12.5px;white-space:nowrap;min-width:86px;text-align:right}
+  .row .cp{
+    opacity:0;border:1px solid var(--line);background:var(--panel);color:var(--fg-2);
+    border-radius:7px;padding:3px 9px;font-size:12px;cursor:pointer;white-space:nowrap;
+  }
+  .row:hover .cp{opacity:1}
+  .row .cp.ok{border-color:#2f9e63;color:#2f9e63;opacity:1}
+  /* ---------- 网盘链接块 ---------- */
+  .linkbox{border:1px solid var(--line);border-radius:12px;background:var(--panel-2);padding:12px}
+  .lk-row{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{
+    display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:9px;
+    border:1px solid var(--line);background:var(--panel);color:var(--fg-2);
+    font-size:12.5px;cursor:pointer;text-decoration:none;white-space:nowrap;
+  }
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));border-color:transparent;color:#fff;font-weight:600}
+  .btn.primary:hover{color:#fff;opacity:.92}
+  .btn.ok{border-color:#2f9e63;color:#2f9e63}
+  .lk-url{
+    margin-top:10px;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;
+    color:var(--fg-3);word-break:break-all;user-select:all;
+  }
+  .linkbox.share{border-color:var(--accent);background:var(--accent-soft)}
+  .linkbox.share .lk-url{color:var(--fg-2)}
+  .pwd{
+    display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:9px;
+    background:var(--panel);border:1px dashed var(--accent);color:var(--fg-2);font-size:12.5px;
+  }
+  .pwd b{color:var(--accent);font-size:14px;letter-spacing:1px;font-family:ui-monospace,monospace}
+  .badge-share{
+    position:absolute;right:8px;top:8px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    color:#fff;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:600;
+  }
+  /* ---------- 详情弹层 ---------- */
+  .mask{position:fixed;inset:0;background:rgba(10,12,16,.5);z-index:60;display:grid;place-items:center;padding:24px}
+  .mask.hide{display:none}
+  .dlg{
+    position:relative;background:var(--panel);border-radius:18px;max-width:640px;width:100%;max-height:86vh;
+    overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.35);
+  }
+  .dlg .hd{display:flex;gap:16px;padding:22px 24px;border-bottom:1px solid var(--line);align-items:center}
+  .dlg .hd img{width:76px;height:76px;object-fit:contain;border-radius:18px;flex:none;background:var(--panel-2)}
+  .dlg .hd .tile{width:76px;height:76px;border-radius:18px;display:grid;place-items:center;color:#fff;font-size:24px;font-weight:700;flex:none}
+  .dlg h2{margin:0 0 6px;font-size:17px}
+  .dlg .sub{color:var(--fg-3);font-size:12.5px;word-break:break-all}
+  .dlg .bd{padding:18px 24px 24px}
+  .dlg .bd p{margin:0 0 12px;color:var(--fg-2);font-size:13.5px;line-height:1.7}
+  .dlg .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px;margin:14px 0 0;color:var(--fg-2)}
+  .dlg .kv b{color:var(--fg-3);font-weight:500}
+  .dlg .x{position:absolute;right:14px;top:12px;border:0;background:transparent;font-size:22px;color:var(--fg-3);cursor:pointer;line-height:1}
+  .empty{padding:52px;text-align:center;color:var(--fg-3)}
+  .tip{margin-top:20px;color:var(--fg-3);font-size:12.5px}
+  mark{background:#ffe58a;color:#5c4700;border-radius:3px;padding:0 1px}
+  @media (prefers-color-scheme:dark){mark{background:#6b5a12;color:#ffe9a8}}
+  @media (max-width:920px){
+    .wrap{flex-direction:column;padding:14px}
+    .side{width:100%;flex:none;position:static;max-height:none}
+    .search{width:100%;margin-left:0}
+    .search input{width:100%;max-width:none}
+    .row .dt{display:none}
+    .grid{grid-template-columns:repeat(auto-fill,minmax(158px,1fr))}
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="brand"><span class="badge">◈</span>资源库</div>
+  <div class="stats" id="stats"></div>
+  <div class="search">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="搜索名称 / 路径…" autocomplete="off">
+  </div>
+</div>
+
+<div class="wrap">
+  <aside class="side">
+    <h4>类目</h4>
+    <div id="tree"></div>
+  </aside>
+  <main>
+    <div class="crumb" id="crumb"></div>
+    <div class="bar">
+      <div class="chips" id="chips"></div>
+      <span class="n" id="count"></span>
+    </div>
+    <div id="views"></div>
+    <div class="tip" id="tip"></div>
+  </main>
+</div>
+
+<div class="mask hide" id="mask"><div class="dlg" id="dlg"></div></div>
+
+<script src="data.js"></script>
+<script>
+const DATA = window.__ND__ || null;
+const el = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = (b) => {
+  if (!b) return '';
+  const u = ['B','KB','MB','GB','TB']; let i = 0, n = b;
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  return (n >= 100 ? n.toFixed(0) : n.toFixed(1)) + ' ' + u[i];
+};
+const hi = (s, q) => {
+  if (!q) return esc(s);
+  const i = String(s).toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return esc(s);
+  return esc(String(s).slice(0, i)) + '<mark>' + esc(String(s).slice(i, i + q.length)) + '</mark>' + esc(String(s).slice(i + q.length));
+};
+/* 无图时的占位块：按名字取稳定渐变色 + 首字 */
+const PALETTES = [
+  ['#6366f1','#8b5cf6'], ['#0ea5e9','#6366f1'], ['#f59e0b','#ef4444'],
+  ['#10b981','#0ea5e9'], ['#ec4899','#8b5cf6'], ['#14b8a6','#22c55e'],
+  ['#f43f5e','#f59e0b'], ['#6366f1','#0ea5e9'],
+];
+const hash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; };
+const palette = (s) => PALETTES[hash(s) % PALETTES.length];
+const initials = (s) => {
+  const m = String(s).match(/[\u4e00-\u9fa5]/g);
+  if (m) return m.slice(0, 2).join('');
+  const w = String(s).split(/[\s\-_.]+/).filter(Boolean);
+  return (w[0] || s).slice(0, 1).toUpperCase() + (w[1] ? w[1][0].toLowerCase() : '');
+};
+const tile = (name, size) => {
+  const p = palette(name);
+  return `<div class="tile" style="background:linear-gradient(135deg,${p[0]},${p[1]});font-size:${size || 30}px">${esc(initials(name))}</div>`;
+};
+const FILE_ICON = { dmg:'💿', zip:'🗜️', rar:'🗜️', '7z':'🗜️', txt:'📄', jpg:'🖼️', jpeg:'🖼️', png:'🖼️', webp:'🖼️',
+  blend:'🧩', fbx:'🧊', obj:'🧊', max:'🧊', exr:'🌈', hdr:'🌈', pdf:'📕', md:'📝' };
+const fileIcon = (n) => FILE_ICON[String(n).split('.').pop().toLowerCase()] || '📄';
+
+/* @link-fns —— 网盘链接还原（用 @link-fns 标记便于单测直接抽这段代码验证）
+   ⚠️ 当前 UI **不使用**（买家视角：不暴露网盘目录位置、不给进入网盘的入口），
+      保留是因为「自己管理时跳回网盘」这类需求可能随时要恢复，且它已被逐条比对验证过（4042/4042）。 */
+const OWNER_UID = (DATA && DATA.owner_uid) || '';
+// ⚠️ 不能用裸 encodeURIComponent：官方把空格编成 `+`，且 `+'()*!` 都要转义。
+// 这套规则已对 4042 条官方链接逐条比对，100% 一致（详见 memory/2026-10-09.md）。
+const encPath = (p) => encodeURIComponent(p)
+  .replace(/[!'()*+]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase())
+  .replace(/%20/g, '+');
+/** kind: 'open' 客户端深链（百度网盘官方「点击查看」）｜ 'web' 网页版 */
+function nsLink(n, kind) {
+  const abs = '/apps/bdpan/' + n.path;
+  if (kind === 'web') {
+    const dir = n.dir ? abs : abs.replace(/\/[^/]*$/, '');   // 网页版指向所在目录（与官方一致）
+    return 'https://pan.baidu.com/disk/main#/index?category=all&path=' + encPath(dir);
+  }
+  return n.dir
+    ? `https://pan.baidu.com/union/spirit/launch?owner_uid=${OWNER_UID}&path=${encPath(abs)}&target=dir`
+    : `https://pan.baidu.com/union/spirit/launch?fsid=${n.fsid || ''}&owner_uid=${OWNER_UID}&path=${encPath(abs)}&target=file`;
+}
+/* @end */
+
+/* ---------- 统计 ---------- */
+function down(n, acc) {
+  const a = acc || { dirs: 0, files: 0, bytes: 0 };
+  for (const c of n.children || []) { if (c.dir) { a.dirs++; down(c, a); } else { a.files++; a.bytes += c.bytes || 0; } }
+  return a;
+}
+const TOTAL = DATA ? down({ children: DATA.tree }) : { dirs: 0, files: 0, bytes: 0 };
+if (DATA) {
+  const d0 = new Date(DATA.generated_at);
+  const p = (n) => String(n).padStart(2, '0');
+  el('stats').innerHTML =
+    `<span>目录 <b>${TOTAL.dirs}</b></span><span>文件 <b>${TOTAL.files}</b></span>` +
+    `<span>合计 <b>${fmt(TOTAL.bytes)}</b></span>` +
+    `<span>更新 <b>${d0.getFullYear()}-${p(d0.getMonth()+1)}-${p(d0.getDate())} ${p(d0.getHours())}:${p(d0.getMinutes())}</b></span>` +
+    (DATA.partial ? `<span style="color:#c8871a" title="${esc((DATA.errors || []).map(e => e.path + '：' + e.message).join('\n'))}">⚠️ ${(DATA.errors || []).length || ''} 个目录未能读取</span>` : '');
+} else {
+  el('stats').innerHTML = '<span style="color:#c0392b">找不到 data.js —— 先跑 npm run site:netdisk</span>';
+}
+
+const TOP = DATA ? DATA.tree : [];
+let cur = null;
+let q = '';
+let sortBy = 'name';
+
+/* ---------- 侧栏 ---------- */
+const NODE_ICON = {
+  Blender: '🧩', 软件: '📦', figma: '🎨',
+  'Blender 模型': '🧊', 'Blender 插件': '🧩',
+  'Mac 软件': '💻', 'Windows 软件': '🖥️', 浏览器插件: '🌐',
+  '设计素材': '🎨', 'Procreate 笔刷': '🖌️', '素材合集': '🗂️',
+  '智能家居': '🏠', '方案与工具': '💡', '00-资源池': '📚',
+};
+/** depth 0/1 的分类默认展开，分类一眼能看见；更深的默认折叠 */
+function makeNode(n, depth) {
+  const frag = document.createDocumentFragment();
+  const c = down(n);
+  const row = document.createElement('div');
+  row.className = 'node' + (cur && cur.path === n.path ? ' on' : '');
+  const hasKids = (n.children || []).some((k) => k.dir);
+  // 有图标就显示图标（分类官方图形 / 软件的真实 App 图标），没有才退回 emoji
+  const glyph = n.icon
+    ? `<img class="ni" src="${esc(n.icon)}" alt="" loading="lazy">`
+    : `<span>${NODE_ICON[n.name] || '📁'}</span>`;
+  row.innerHTML = `<span class="tw">${hasKids ? '▸' : ''}</span>${glyph}` +
+    `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(n.title || n.name)}</span>` +
+    `<span class="cnt">${c.files}</span>`;
+  const kids = document.createElement('div');
+  kids.className = 'kids' + (depth >= 1 ? ' hide' : '');
+  if (hasKids) {
+    for (const k of n.children) if (k.dir) kids.appendChild(makeNode(k, depth + 1));
+    row.querySelector('.tw').onclick = (e) => { e.stopPropagation(); kids.classList.toggle('hide'); };
+  }
+  row.onclick = () => {
+    cur = n;
+    if (hasKids) kids.classList.remove('hide');
+    renderTree(); render(); scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  frag.appendChild(row); frag.appendChild(kids);
+  return frag;
+}
+function renderTree() {
+  const box = el('tree'); box.innerHTML = '';
+  const rootNode = document.createElement('div');
+  rootNode.className = 'node' + (cur === null ? ' on' : '');
+  rootNode.innerHTML = `<span class="tw"></span><span>🏠</span><span>全部</span><span class="cnt">${TOTAL.files}</span>`;
+  rootNode.onclick = () => { cur = null; renderTree(); render(); };
+  box.appendChild(rootNode);
+  for (const n of TOP) if (n.dir) box.appendChild(makeNode(n, 0));
+}
+
+/* ---------- 面包屑 ---------- */
+function renderCrumb() {
+ const ancestry=(ns,target,chain=[])=>{for(const n of ns){if(n.path===target)return [...chain,n];const hit=ancestry(n.children||[],target,[...chain,n]);if(hit)return hit;}return null;};
+ const parts=cur?ancestry(TOP,cur.path)||[]:[];
+ const box=el('crumb');box.innerHTML='<a data-i="-1">全部</a>'+parts.map((n,i)=>`<span class="sep">/</span><a data-i="${i}">${esc(n.title||n.name)}</a>`).join('');
+ box.querySelectorAll('a').forEach(a=>a.onclick=()=>{cur=parts[Number(a.dataset.i)]||null;renderTree();render();});
+}
+
+/* ---------- 卡片 / 文件行 ---------- */
+function cardOf(n) {
+  const img = (n.cover || n.icon)
+    ? `<img src="${esc(n.cover || n.icon)}" alt="" loading="lazy" decoding="async">`
+    : tile(n.name);
+  const favs = [];
+  if (n.version) favs.push(`<span class="ver">${esc(n.version)}</span>`);
+  if (n.files) favs.push(`<span>${n.files} 个文件</span>`);
+  // 描述：软件用官方用途；搜索结果用「类目 · N 个文件」（不显示网盘路径）
+  const desc = n.app ? (n.app.usage[0] || n.app.cn || '') : (n.description || (q ? `${n.cat || n.path.split('/')[0]} · ${n.files || 0} 个文件` : ''));
+  return `<div class="card" data-path="${esc(n.path)}">
+    <div class="thumb${!n.cover && n.icon ? ' app' : ''}">${img}<div class="fav">${favs.join('')}</div>${
+      n.share ? '<span class="badge-share">🔗 有分享</span>' : ''}</div>
+    <div class="body">
+      <div class="t">${hi(n.title || n.name, q)}</div>
+      ${desc ? `<div class="d">${hi(desc, q)}</div>` : ''}
+      <div class="f"><span>${n.sizeText || ''}</span><span>${esc(n.mtime || '')}</span>${
+        n.share ? `<button class="cp" data-path="${esc(n.path)}">复制分享链接</button>` : ''}</div>
+    </div>
+  </div>`;
+}
+function rowOf(n) {
+  return `<div class="row" data-path="${esc(n.path)}">
+    <span class="ico">${n.cover ? `<img src="${esc(n.cover)}" alt="资源预览" style="width:42px;height:32px;object-fit:contain">` : fileIcon(n.name)}</span>
+    <span class="nm">${hi(n.name, q)}</span>
+    <span class="sz">${n.sizeText || ''}</span>
+    <span class="dt">${esc(n.mtime || '')}</span>
+  </div>`;
+}
+
+/* ---------- 渲染 ---------- */
+const flatten = (node, acc) => {
+  acc = acc || [];
+  for (const c of node.children || []) { acc.push(c); if (c.dir) flatten(c, acc); }
+  return acc;
+};
+
+/* 卡片区的「有效子项」：**跳过分类层** —— 合成分类节点（group）只出现在侧边栏，
+   不在卡片区再重复一遍；顺带跳过「授权说明」这类内部目录。
+   真实网盘目录不算分类层，照常显示成卡片。 */
+function effChildren(node) {
+  const out = [];
+  for (const c of node.children || []) {
+    if (!c.dir) { out.push(c); continue; }
+    if (c.internal) continue;
+    if (c.group) out.push(...effChildren(c));
+    else out.push(c);
+  }
+  return out;
+}
+function renderChips() {
+  const box = el('chips'); box.innerHTML = '';
+  for (const pair of [['name','名称'], ['size','大小'], ['mtime','时间']]) {
+    const b = document.createElement('div');
+    b.className = 'chip' + (sortBy === pair[0] ? ' on' : '');
+    b.textContent = pair[1];
+    b.onclick = () => { sortBy = pair[0]; renderChips(); render(); };
+    box.appendChild(b);
+  }
+}
+const sorter = (a, b) => {
+  if (a.dir !== b.dir) return a.dir ? -1 : 1;
+  if (sortBy === 'size') return (b.bytes || 0) - (a.bytes || 0);
+  if (sortBy === 'mtime') return String(b.mtime).localeCompare(String(a.mtime));
+  // 有 order 的先按 order（顶层大类与 Blender 子类的展示顺序），再按**展示名**排
+  // （按原名排的话「Blender」会被中文名挤到后面）
+  const ao = a.order ?? 50;
+  const bo = b.order ?? 50;
+  if (ao !== bo) return ao - bo;
+  return String(a.title || a.name).localeCompare(String(b.title || b.name), 'zh');
+};
+function render() {
+  const box = el('views');
+  let dirs;
+  let files;
+  if (q) {
+    // 搜索走 path（原目录名，含来源 ID，便于按编号找），但合成的大类节点不进结果
+    const all = flatten({ children: TOP }).filter((n) => !n.group && !n.internal && [n.path,n.title,n.description,n.app?.cn].filter(Boolean).join(' ').toLowerCase().includes(q.toLowerCase()));
+    dirs = all.filter((n) => n.dir).sort(sorter);
+    files = all.filter((n) => !n.dir).sort(sorter);
+  } else {
+    const items = effChildren(cur ? cur : { children: TOP });
+    dirs = items.filter((n) => n.dir).sort(sorter);
+    files = items.filter((n) => !n.dir).sort(sorter);
+  }
+  el('count').textContent = `${dirs.length + files.length} 项${q ? ' · 全库搜索' : ''}`;
+
+  if (!dirs.length && !files.length) {
+    box.innerHTML = `<div class="empty">${q ? '没有匹配「' + esc(q) + '」的条目' : '这个目录是空的'}</div>`;
+    return;
+  }
+  let html = '';
+  if (dirs.length) {
+    html += ((q || cur) ? '<h3 class="sec">目录</h3>' : '') +
+      `<div class="grid">${dirs.map(cardOf).join('')}</div>`;
+  }
+  const pictures=files.filter(n=>n.cover);
+  if(pictures.length)html+='<h3 class="sec">预览图片</h3><div class="grid">'+pictures.map(cardOf).join('')+'</div>';
+  files=files.filter(n=>!n.cover);
+  if (files.length) {
+    html += (dirs.length ? '<h3 class="sec">文件</h3>' : '') +
+      `<div class="list">${files.map(rowOf).join('')}</div>`;
+  }
+  box.innerHTML = html;
+
+  box.querySelectorAll('.card').forEach((c) => {
+    c.onclick = (e) => {
+      if (e.target.classList.contains('cp')) return;
+      const n = flatten({ children: TOP }).find((x) => x.path === c.dataset.path);
+      if (!n) return;
+      if (!q && !n.resource && (n.children || []).some((k) => k.dir)) {
+        cur = n; renderTree(); render(); scrollTo({ top: 0, behavior: 'smooth' }); return;
+      }
+      openDetail(n);
+    };
+  });
+  // 文件行：点一下也开详情（那里能看到网盘链接）
+  box.querySelectorAll('.row[data-path]').forEach((r) => {
+    r.onclick = (e) => {
+      if (e.target.classList.contains('cp')) return;
+      const n = flatten({ children: TOP }).find((x) => x.path === r.dataset.path);
+      if (n) openDetail(n);
+    };
+  });
+  box.querySelectorAll('.cp').forEach((b) => {
+    b.onclick = async (e) => {
+      e.stopPropagation();
+      const n = flatten({ children: TOP }).find((x) => x.path === b.dataset.path);
+      if (!n || !n.share) return;
+      await copyText(`${n.share.link} 提取码：${n.share.pwd}`);
+      b.textContent = '已复制 ✓'; b.classList.add('ok');
+      setTimeout(() => { b.textContent = '复制分享链接'; b.classList.remove('ok'); }, 1400);
+    };
+  });
+  renderCrumb();
+}
+
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); }
+  catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+  }
+}
+
+/* ---------- 详情弹层 ---------- */
+function openDetail(n) {
+  const dlg=el('dlg');
+  const sh=n.share;
+  const shText=sh?`${sh.link}${sh.pwd?' 提取码：'+sh.pwd:''}`:'';
+  dlg.innerHTML=`<button class="x" id="dlgx" aria-label="关闭">×</button>
+    <div class="hd"><div><h2>${esc(n.title||n.name)}</h2><div class="sub">${esc(n.cat||'')}</div></div></div>
+    <div class="bd">
+      ${n.cover ? `<img src="${esc(n.cover)}" alt="${esc(n.title||n.name)}" style="display:block;width:100%;max-height:42vh;object-fit:contain;border-radius:12px;margin-bottom:16px">` : ''}
+      ${n.description ? `<p>${esc(n.description)}</p>`:''}
+      <p>${n.dir?(n.files||0)+' 个文件 · ':''}${esc(n.sizeText||'')}</p>
+      ${n.dir ? '<button class="btn" id="browse-files">查看合集内容</button>':''}
+      ${n.shareScope?'<p>分享链接包含此条目及所属合集内容。</p>':''}
+      ${sh ? `<h3 class="sec">分享链接${sh.period===0?'（永久有效）':''}</h3>
+        <div class="linkbox share"><div class="lk-row">
+          <button class="btn primary" id="sh-copy">复制链接与提取码</button>
+          <a class="btn" href="${esc(sh.link)}" target="_blank" rel="noopener">打开分享 ↗</a>
+          ${sh.pwd?`<span class="pwd">提取码 <b>${esc(sh.pwd)}</b></span>`:''}
+        </div><div class="lk-url">${esc(sh.link)}</div></div>` : '<p>此分类用于浏览资源，请进入具体合集获取分享链接。</p>'}
+    </div>`;
+  el('mask').classList.remove('hide');
+  dlg.querySelector('#dlgx').onclick=closeDetail;
+  const browse=dlg.querySelector('#browse-files');
+  if(browse)browse.onclick=()=>{cur=n;q='';el('q').value='';closeDetail();renderTree();render();};
+  const button=dlg.querySelector('#sh-copy');
+  if(button)button.onclick=async()=>{await copyText(shText);button.textContent='已复制 ✓';};
+}
+function closeDetail() { el('mask').classList.add('hide'); }
+el('mask').onclick = (e) => { if (e.target.id === 'mask') closeDetail(); };
+
+/* ---------- 搜索 / 快捷键 ---------- */
+let timer;
+el('q').addEventListener('input', (e) => {
+  clearTimeout(timer);
+  const v = e.target.value.trim();
+  timer = setTimeout(() => { q = v; render(); }, 120);
+});
+addEventListener('keydown', (e) => {
+  if (e.key === '/' && document.activeElement !== el('q')) { e.preventDefault(); el('q').focus(); }
+  if (e.key === 'Escape') {
+    if (!el('mask').classList.contains('hide')) return closeDetail();
+    el('q').value = ''; q = ''; render(); el('q').blur();
+  }
+});
+
+el('tip').innerHTML = DATA
+  ? '按用途分类整理 · 图片可查看大图 · 分享链接附提取码　·　按 <b>/</b> 搜索，<b>Esc</b> 关闭'
+  : '';
+
+renderTree();
+renderChips();
+render();
+</script>
+</body>
+</html>

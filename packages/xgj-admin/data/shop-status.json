@@ -1,0 +1,7 @@
+{
+  "_说明": "店铺可用性名单。发布前会检查草稿的目标店铺（publish_shop[0].user_name）：命中且未过期 → 直接拒（省掉体检和 300s 名额）。要强行发布：publish.run 传 { forceShop: true }。",
+  "顺和服饰平价超市": {
+    "until": "2026-10-15",
+    "reason": "平台封控 7 天（2026-10-08 16:01 全部商品被下架，product_status=36 down_shelved）"
+  }
+}

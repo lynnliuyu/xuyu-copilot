@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>货源后台 · 商品与订单管理</title>
+<style>
+:root{
+  --bg:#F6F7F9;--card:#FFF;--line:#E4E7EC;--line2:#F0F2F5;
+  --t1:#1F2430;--t2:#5A6473;--t3:#8A929E;
+  --blue:#185FA5;--blue-bg:#E6F1FB;--blue-line:#B5D4F4;
+  --green:#3B6D11;--green-bg:#EAF3DE;--green-line:#C0DD97;
+  --amber:#854F0B;--amber-bg:#FAEEDA;--amber-line:#FAC775;
+  --red:#A32D2D;--red-bg:#FCEBEB;--red-line:#F09595;
+  --gray-bg:#F1EFE8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);
+  font:14px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:32px 22px 80px}
+header{border-bottom:2px solid var(--t1);padding-bottom:18px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
+h1{margin:0 0 4px;font-size:24px;font-weight:600;letter-spacing:-.2px}
+.sub{color:var(--t2);font-size:13px}
+.meta{margin-top:10px;font-size:12px;color:var(--t3);word-break:break-all;font-family:ui-monospace,Menlo,monospace}
+.hd-right{display:flex;gap:8px;align-items:center}
+h2{font-size:16px;font-weight:600;margin:32px 0 12px;display:flex;align-items:center;gap:10px}
+h2 .cnt{font-size:12px;font-weight:400;color:var(--t3)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(126px,1fr));gap:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+.stat .k{font-size:11.5px;color:var(--t3);letter-spacing:.03em}
+.stat .v{font-size:22px;font-weight:600;margin-top:3px;line-height:1.25}
+.stat .v small{font-size:12px;font-weight:400;color:var(--t3);margin-left:3px}
+/* 类别筛选条 */
+.catbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.catchip{display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);
+  border-radius:20px;padding:6px 13px;font-size:12.5px;cursor:pointer;user-select:none;transition:.12s}
+.catchip:hover{border-color:#c3cad6}
+.catchip.on{border-color:var(--blue);box-shadow:0 0 0 2px rgba(37,99,235,.13)}
+.catchip .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.catchip .n{color:var(--t3);font-size:11.5px}
+.catchip .p{color:var(--t2);font-size:11.5px;font-weight:600;padding-left:2px}
+.cpill{display:inline-block;padding:1.5px 7px;border-radius:5px;font-size:11px;font-weight:600;
+  white-space:nowrap;vertical-align:1px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#FAFBFC;text-align:left;padding:10px 13px;font-weight:600;font-size:12px;color:var(--t2);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 13px;border-bottom:1px solid var(--line2);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr.off td{background:#FCFCFB;color:var(--t3)}
+.gno{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;font-weight:600}
+.gname{max-width:330px;color:var(--t2)}
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.p-on{background:var(--green-bg);color:var(--green)}
+.p-off{background:var(--gray-bg);color:var(--t2)}
+.p-shared{background:var(--blue-bg);color:var(--blue)}
+.p-pool{background:#EEEDFE;color:#534AB7}
+.p-warn{background:var(--amber-bg);color:var(--amber)}
+.p-ok{background:var(--green-bg);color:var(--green)}
+.p-fail{background:var(--red-bg);color:var(--red)}
+.p-pend{background:var(--amber-bg);color:var(--amber)}
+.btn{font:inherit;font-size:12.5px;padding:5px 11px;border-radius:8px;border:1px solid var(--line);
+  background:#fff;color:var(--t1);cursor:pointer;white-space:nowrap;transition:background .12s,border-color .12s}
+.btn:hover{background:#F7F8FA;border-color:#CDD3DC}
+.btn.primary{background:var(--t1);color:#fff;border-color:var(--t1)}
+.btn.primary:hover{background:#000}
+.btn.danger{color:var(--red);border-color:#F3C9C9}
+.btn.danger:hover{background:var(--red-bg)}
+.btn.tiny{padding:3px 8px;font-size:11.5px}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.money{font-variant-numeric:tabular-nums;font-weight:600}
+.muted{color:var(--t3)}
+.warnbox{background:var(--amber-bg);border:1px solid var(--amber-line);border-radius:10px;padding:12px 15px;font-size:13px;margin:0 0 14px}
+.warnbox b{color:var(--amber)}
+.empty{padding:28px;text-align:center;color:var(--t3);font-size:13px}
+.modal-bg{position:absolute;inset:0;background:rgba(20,24,32,.42);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:50}
+.hidden{display:none!important}
+
+/* ---- 发布闸门状态条（服务端节流）---- */
+.guardbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--card);
+  border:1px solid var(--line);border-radius:11px;padding:11px 15px;margin-bottom:14px;
+  font-size:12.5px;color:var(--t2)}
+.guardbar b{color:var(--t1);font-variant-numeric:tabular-nums}
+.guardbar .ok{color:var(--green);font-weight:700}
+.guardbar .wait{color:var(--amber);font-weight:700}
+.guardbar .sep{flex:1}
+/* ---- 体检结论 ---- */
+.pf{display:flex;gap:12px;padding:12px 15px;border:1px solid var(--line);border-radius:10px;
+  background:var(--card);margin-bottom:8px}
+.pf.block{border-color:#F3C9C9;background:#FFFBFB}
+.pf.warn{border-color:var(--amber-line);background:#FFFDF7}
+.pf .pfi{width:24px;flex:0 0 24px;text-align:center;font-size:15px;line-height:1.45}
+.pf .pfb{flex:1;min-width:0}
+.pf .pft{font-weight:600;font-size:13.5px}
+.pf .pfd{font-size:12.5px;color:var(--t2);margin-top:5px;word-break:break-word;white-space:pre-wrap;line-height:1.6}
+/* ---- 违禁词表 ---- */
+.bw{display:flex;gap:9px;padding:7px 15px;border-bottom:1px solid var(--line2);font-size:12.5px;align-items:baseline}
+.bw:last-child{border-bottom:0}
+.bw .w{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:#8A2B2B;background:#FDF1F1;
+  padding:2px 7px;border-radius:5px;flex:0 0 auto}
+.bw .w.wn{color:var(--amber);background:var(--amber-bg)}
+.bw .d{color:var(--t2);flex:1;min-width:0}
+.stat .v.red{color:#A32B2B}
+.stat .v.amber{color:var(--amber)}
+
+/* ---- 批量操作条 ---- */
+.bulkbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;background:var(--card);
+  border:1px solid var(--line);border-radius:11px;padding:10px 14px;margin-bottom:11px;font-size:12.5px;color:var(--t2)}
+.bulkbar.on{border-color:var(--blue-line);background:var(--blue-bg)}
+.bulkbar .cnt2{font-weight:700;color:var(--t1)}
+.bulkbar .sep{flex:1}
+.qcb{width:15px;height:15px;margin:0;flex:0 0 15px;cursor:pointer;accent-color:var(--blue)}
+.queue .qh{display:flex;align-items:center;gap:5px;margin-left:4px}
+.qpf{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:700;margin-left:6px}
+.qpf.bad{background:#FDF1F1;color:#A32B2B;border:1px solid #F3C9C9}
+.qpf.warn{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-line)}
+.qpf.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-line)}
+.qpf.none{background:#F1F3F6;color:var(--t3)}
+
+/* ---- 队列搜索 ---- */
+.qsearch{display:flex;align-items:center;gap:9px;margin:0 0 11px}
+.qsearch input{flex:1;min-width:200px;padding:8px 12px;border:1px solid var(--line);border-radius:9px;
+  font-size:13px;background:var(--card);color:var(--t1)}
+.qsearch input:focus{outline:none;border-color:var(--blue-line);box-shadow:0 0 0 3px var(--blue-bg)}
+.qsearch select{padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:13px;
+  background:var(--card);color:var(--t1)}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:760px;max-height:calc(100vh - 80px);overflow:auto;
+  border:1px solid var(--line);box-shadow:0 12px 40px rgba(16,24,40,.18)}
+.modal-hd{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:14px;position:sticky;top:0;background:#fff;z-index:2}
+.modal-hd h3{margin:0;font-size:15px;font-weight:600}
+.modal-bd{padding:18px 20px}
+.modal-ft{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:#fff}
+.crow{border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:10px}
+.crow.used{background:#FBFBFA}
+.crow.primary-frame{border-color:var(--blue-line);background:var(--blue-bg)}
+.crow-hd{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;font-size:12px;color:var(--t3)}
+textarea{width:100%;font:12.5px/1.6 ui-monospace,Menlo,monospace;padding:9px 11px;border:1px solid var(--line);
+  border-radius:8px;resize:vertical;min-height:74px;background:#FCFCFD;color:var(--t1)}
+textarea:focus{outline:none;border-color:var(--blue-line);background:#fff}
+input,select{font:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--t1)}
+input:focus,select:focus{outline:none;border-color:var(--blue-line)}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:12px;color:var(--t2);margin-bottom:5px}
+.field .hint{font-size:11.5px;color:var(--t3);margin-top:4px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%);background:var(--t1);color:#fff;
+  padding:10px 20px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .18s;z-index:99;max-width:80vw}
+.toast.show{opacity:1}
+.toast.err{background:var(--red)}
+.toggle{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--t2);cursor:pointer;user-select:none}
+details summary{cursor:pointer;font-size:12.5px;color:var(--blue)}
+details .inner{margin-top:8px;display:flex;flex-direction:column;gap:7px}
+.cchip{background:var(--gray-bg);border-radius:8px;padding:8px 10px;font:12px/1.6 ui-monospace,Menlo,monospace;
+  white-space:pre-wrap;word-break:break-all;color:var(--t2)}
+/* ==================== 上架管理 ==================== */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:22px}
+.tab{font:inherit;font-size:13.5px;font-weight:500;padding:9px 16px;border:none;background:none;color:var(--t2);
+  cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab:hover{color:var(--t1)}
+.tab.active{color:var(--t1);font-weight:600;border-bottom-color:var(--t1)}
+.tab-badge{display:inline-block;min-width:17px;padding:0 5px;border-radius:9px;background:var(--amber-bg);
+  color:var(--amber);font-size:11px;font-weight:600;margin-left:5px}
+.queue{display:flex;align-items:center;gap:12px;padding:11px 15px;border:1px solid var(--line);
+  border-radius:10px;background:var(--card);margin-bottom:8px}
+.queue.blocked{border-color:#F3C9C9;background:#FFFBFB}
+.queue.done{opacity:.62;background:#FCFCFB}
+.queue.excluded{border-color:#E8D5D5;background:#FCF8F8;opacity:.78}
+.queue.excluded .qt{text-decoration:line-through;text-decoration-color:#C99}
+.queue .num{width:24px;height:24px;border-radius:50%;background:var(--gray-bg);color:var(--t2);
+  font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.queue .qn{flex:1;min-width:0}
+.queue .qt{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.queue .qs{font-size:12px;color:var(--t3);margin-top:2px}
+.res{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:15px 17px;margin-bottom:12px}
+.res-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.res-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.res-id{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--t3)}
+.sides{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:13px}
+.side{border:1px solid var(--line2);border-radius:10px;padding:11px 13px;background:#FCFCFD}
+.side h4{margin:0 0 8px;font-size:12.5px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.side .kv{font-size:12px;color:var(--t2);margin:4px 0;word-break:break-all;line-height:1.5}
+.side .kv b{color:var(--t3);font-weight:400}
+.share{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;background:var(--gray-bg);border-radius:6px;
+  padding:3px 7px;display:inline-block;word-break:break-all;color:var(--t2)}
+.issue{font-size:12.5px;padding:7px 11px;border-radius:8px;margin-top:6px;line-height:1.5}
+.i-blocker{background:var(--red-bg);color:var(--red)}
+.i-warn{background:var(--amber-bg);color:var(--amber)}
+.i-info{background:var(--blue-bg);color:var(--blue)}
+.i-ok{background:var(--green-bg);color:var(--green)}
+.folders{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.fchip{background:#fff;border:1px solid var(--line);border-radius:7px;padding:2px 8px;font-size:11.5px;color:var(--t2)}
+.fchip.only{background:var(--amber-bg);border-color:var(--amber-line);color:var(--amber)}
+@media(max-width:760px){.row2{grid-template-columns:1fr}.gname{max-width:none}.sides{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>网盘资源 · 运营后台</h1>
+      <div class="sub">闲管家「虚拟货源」+ 闲鱼商品上架</div>
+      <div class="meta" id="meta">加载中…</div>
+    </div>
+    <div class="hd-right">
+      <label class="toggle"><input type="checkbox" id="auto" checked> 自动刷新 15s</label>
+      <button class="btn" onclick="load()">刷新</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-view="source" onclick="switchView('source')">货源管理</button>
+    <button class="tab" data-view="publish" onclick="switchView('publish')">上架管理 <span class="tab-badge hidden" id="pubBadge">0</span></button>
+    <button class="tab" data-view="preflight" onclick="switchView('preflight')">上架体检 <span class="tab-badge hidden" id="pfBadge">0</span></button>
+  </nav>
+
+  <!-- ==================== 视图一：货源管理 ==================== -->
+  <div id="view-source">
+    <div id="alerts"></div>
+    <div class="stats" id="stats"></div>
+
+    <h2>商品 <span class="cnt" id="goodsCnt"></span>
+      <span style="margin-left:auto"><button class="btn primary" onclick="openCreate()">新建商品</button></span>
+    </h2>
+    <div class="card" id="goodsBox"></div>
+
+    <h2>订单 <span class="cnt" id="ordersCnt"></span></h2>
+    <div class="card" id="ordersBox"></div>
+
+    <h2>商品变更订阅 <span class="cnt" id="subsCnt"></span></h2>
+    <div class="card" id="subsBox"></div>
+  </div>
+
+  <!-- ==================== 视图二：上架管理 ==================== -->
+  <div id="view-publish" class="hidden">
+    <div id="pfAlert"></div>
+    <div id="pubAlerts"></div>
+    <!-- 发布闸门状态：节流间隔 / 下次可发 / 今日已发。护栏在服务端，这里只是显示 -->
+    <div class="guardbar" id="guardBar"></div>
+    <div class="stats" id="pubStats"></div>
+    <div class="catbar" id="catBar"></div>
+    <div class="qsearch">
+      <input id="qSearch" placeholder="搜索：产品名 / 资源 id / 草稿号 / 商品号 / 体检命中原因…（空格分隔多关键词）"
+             oninput="setQueueSearch(this.value)">
+      <select id="qStatus" onchange="setQueueStatus(this.value)">
+        <option value="">全部状态</option>
+        <option value="ready">可发布</option>
+        <option value="blocked">有阻塞项</option>
+        <option value="pending">未生成草稿</option>
+        <option value="published">已发布</option>
+        <option value="down_shelved">已下架（线上）</option>
+        <option value="excluded">已排除（不再发布）</option>
+      </select>
+      <span class="muted" id="qHint"></span>
+    </div>
+
+    <h2>待发布队列 <span class="cnt" id="queueCnt"></span>
+      <span style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn" onclick="openReprice()">按类别改价</button>
+        <button class="btn" onclick="pingMediaNow()">测试图床</button>
+        <button class="btn primary" onclick="openResourceEditor('')">新增资源</button>
+      </span>
+    </h2>
+    <!-- 批量操作条：先勾选，再对勾选的那批动手 -->
+    <div class="bulkbar" id="bulkBar"></div>
+    <div id="queueBox"></div>
+
+    <h2>资源条目 <span class="cnt" id="resCnt"></span></h2>
+    <div id="resBox"></div>
+
+    <h2>未关联资源的草稿 <span class="cnt" id="orphanCnt"></span></h2>
+    <div class="card" id="orphanBox"></div>
+
+    <p class="muted" style="font-size:12.5px;margin-top:26px">
+      可上架的一组参数（2026-10-07 实测成功）：类目
+      <b id="cfgCat">—</b>　店铺 <b id="cfgShop">—</b>。
+      改这些值之前请先确认——它们决定「能不能上架」。
+    </p>
+  </div>
+
+  <!-- ==================== 视图三：上架体检 ==================== -->
+  <div id="view-preflight" class="hidden">
+    <div class="warnbox" style="margin-bottom:14px">
+      <b>为什么必须有这一页：</b>2026-10-08 一个 Blender 插件的<b>封面图带「GPT」字样</b>，
+      导致账号被封控；另有一次因发布过快，闲鱼批量下架了约 405 个在售商品。
+      两者现在都由<b>服务端闸门</b>强制拦截 —— 这里只是让你在发布前先看到结论。
+      <br><b>红线：</b>GPT / ChatGPT 等 AI 工具品牌词（<b>图里有也算</b>）、过度暴露的女性图片、
+      破解 / 越狱 / 虚假宣传等。
+    </div>
+
+    <div class="stats" id="pfStats"></div>
+
+    <h2>体检范围与执行
+      <span style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn" onclick="runPreflight(false)">扫文字（快）</button>
+        <button class="btn primary" onclick="runPreflight(true)">扫文字 + 图片（慢，最准）</button>
+        <button class="btn" onclick="load()">刷新</button>
+      </span>
+    </h2>
+    <div class="card" id="pfScope"></div>
+
+    <h2>体检结论 <span class="cnt" id="pfCnt"></span></h2>
+    <div id="pfBox"></div>
+
+    <h2>违禁词表 <span class="cnt" id="bwCnt"></span>
+      <span style="margin-left:auto"><button class="btn" onclick="openBannedWords()">查看/编辑</button></span>
+    </h2>
+    <div class="card" id="bwBox"></div>
+  </div>
+</div>
+
+<div class="modal-bg hidden" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let STATE = null;
+let PUB = null;
+let VIEW = 'source';
+let MODAL = { type: null, goodsNo: null };
+/** 类别筛选：'' = 全部 ｜ '__none__' = 未分类 ｜ 其他 = 类别 id */
+let CAT_FILTER = '';
+/** 队列/资源列表的搜索与状态筛选（742 个条目没有搜索根本没法操作） */
+let Q_SEARCH = '';
+let Q_STATUS = '';
+
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fen2yuan = (f) => '¥' + (Number(f || 0) / 100).toFixed(2);
+const timeStr = (t) => { const n = Number(t); if (!n) return '-'; const d = new Date(n * 1000);
+  const p = (x) => String(x).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; };
+const isPlaceholder = (txt) => /xxxxxxxx|占位|请替换/i.test(String(txt || ''));
+
+/* ---------- 类别 ---------- */
+const catList = () => (PUB && PUB.categories) || [];
+const catOf = (id) => catList().find((c) => c.id === id) || null;
+/** 类别小标签（带该类的主题色） */
+function catPill(id) {
+  const c = catOf(id);
+  if (!c) {
+    return '<span class="cpill" style="background:#EEF1F5;color:#7B8798">未分类</span>';
+  }
+  return `<span class="cpill" style="background:${c.color}22;color:${c.color.replace(/^#/, '#')};border:1px solid ${c.color}55">${esc(c.name)}</span>`;
+}
+/* ---------- 店铺 ---------- */
+// ⚠️ 闲管家后台显示的是「店铺名」，接口要传的是 user_name —— 两者完全不同。
+//    这里统一显示成「后台名（user_name）」，避免上架时传错。
+const shopOf = (un) => ((PUB && PUB.shops) || []).find((s) => s.user_name === un) || null;
+function shopLabel(un) {
+  if (!un) return '—';
+  const s = shopOf(un);
+  return s ? `${s.label}（${s.user_name}）` : String(un);
+}
+/** 类别默认店铺（没配则回落全局默认） */
+function catShop(catId) {
+  const c = catOf(catId);
+  const cfg = (PUB && PUB.meta && PUB.meta.verifiedConfig) || {};
+  const un = (c && c.shop) || cfg.user_name;
+  return shopLabel(un);
+}
+
+/** 按当前筛选取值 */
+function filterByCat(list) {
+  let out = list;
+  if (CAT_FILTER) {
+    out = CAT_FILTER === '__none__' ? out.filter((r) => !r.category) : out.filter((r) => r.category === CAT_FILTER);
+  }
+  const q = (Q_SEARCH || '').trim().toLowerCase();
+  if (q) {
+    // 支持多关键词（空格分隔，全部命中才算）
+    const terms = q.split(/\s+/).filter(Boolean);
+    out = out.filter((r) => {
+      const hay = [
+        r.display_name, r.name, r.id, r.draft_code,
+        (r.listing || {}).product_id,
+        r.status,
+        ...(r.preflight?.block || []), ...(r.preflight?.warn || []),
+      ].filter(Boolean).join(' ').toLowerCase();
+      return terms.every((t) => hay.includes(t));
+    });
+  }
+  if (Q_STATUS) out = out.filter((r) => statusOf(r) === Q_STATUS);
+  return out;
+}
+function setCatFilter(v) {
+  CAT_FILTER = v;
+  renderPublish();
+}
+
+function toast(msg, isErr) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = 'toast'; }, 2600);
+}
+
+async function api(path, body) {
+  const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  const j = await r.json().catch(() => ({ ok: false, error: '响应不是合法 JSON' }));
+  if (!j.ok) { toast(j.error || '操作失败', true); return null; }
+  toast(j.message || '完成');
+  await load();
+  return j;
+}
+
+async function load() {
+  try {
+    const [a, b] = await Promise.all([
+      fetch('/api/state', { cache: 'no-store' }).then((r) => r.json()),
+      fetch('/api/publish/state', { cache: 'no-store' })
+        .then((r) => r.json())
+        .catch(() => null),
+    ]);
+    STATE = a;
+    PUB = b;
+  } catch (e) {
+    document.getElementById('meta').textContent = '无法连接管理端服务：' + e.message;
+    return;
+  }
+  render();
+  renderPublish();
+}
+
+function switchView(v) {
+  VIEW = v;
+  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === v));
+  document.getElementById('view-source').classList.toggle('hidden', v !== 'source');
+  document.getElementById('view-publish').classList.toggle('hidden', v !== 'publish');
+  document.getElementById('view-preflight').classList.toggle('hidden', v !== 'preflight');
+  if (v === 'preflight') { renderPreflight(); loadBannedWords(); }
+  if (v === 'publish') startGuardTicker();
+}
+
+function render() {
+  const s = STATE;
+  document.getElementById('meta').textContent =
+    `数据目录 ${s.meta.dataDir}　·　网关端口 ${s.meta.gatewayPort}　·　商户 ${s.merchant.mch_id}　·　更新于 ${new Date(s.meta.generatedAt).toLocaleTimeString('zh-CN')}`;
+
+  const st = s.stats;
+  document.getElementById('stats').innerHTML = [
+    ['商品总数', st.goods_total, ''], ['在架', st.goods_on, ''], ['下架', st.goods_off, ''],
+    ['订单总数', st.orders_total, ''], ['已成功发货', st.orders_success, ''],
+    ['累计成交额', fen2yuan(st.revenue_fen), ''], ['已发出内容', st.cards_delivered, '条'],
+  ].map(([k, v, u]) => `<div class="stat"><div class="k">${k}</div><div class="v">${esc(v)}${u ? `<small>${u}</small>` : ''}</div></div>`).join('');
+
+  // 占位内容告警——这是最容易翻车的点
+  const placeholders = [];
+  for (const g of s.goods) {
+    const pool = s.cards[g.goods_no] || [];
+    const targets = g.stock_mode === 'shared' ? pool.slice(0, 1) : pool;
+    if (targets.some((c) => isPlaceholder(c.card_pwd))) placeholders.push(g.goods_no);
+  }
+  document.getElementById('alerts').innerHTML = placeholders.length
+    ? `<div class="warnbox"><b>有 ${placeholders.length} 个商品的内容还是占位文案</b>（${placeholders.map(esc).join('、')}）。
+       这种情况下买家付款后收到的是没用的字符串，务必先点「管理内容」换成真实分享链接再上架。</div>` : '';
+
+  renderGoods();
+  renderOrders();
+  renderSubs();
+}
+
+function renderGoods() {
+  const rows = STATE.goods.map((g) => {
+    const pool = STATE.cards[g.goods_no] || [];
+    const targets = g.stock_mode === 'shared' ? pool.slice(0, 1) : pool;
+    const ph = targets.some((c) => isPlaceholder(c.card_pwd));
+    const on = g.effective_status === 1;
+    const stockTxt = g.stock_mode === 'shared'
+      ? `<span class="pill p-shared">一链多发</span>`
+      : `<span class="pill p-pool">一单一链</span>`;
+    return `<tr class="${on ? '' : 'off'}">
+      <td><div class="gno">${esc(g.goods_no)}</div></td>
+      <td><div class="gname">${esc(g.goods_name)}</div>${ph ? '<span class="pill p-warn">内容为占位</span>' : ''}</td>
+      <td class="money">${fen2yuan(g.price)}</td>
+      <td>${stockTxt}</td>
+      <td>${g.effective_stock}<div class="muted" style="font-size:11.5px">可用 ${g.cards_free} / 共 ${g.cards_total}</div></td>
+      <td>${g.cards_used}</td>
+      <td>${on ? '<span class="pill p-on">在架</span>' : '<span class="pill p-off">下架</span>'}</td>
+      <td><div class="acts">
+        <button class="btn tiny" onclick="openCards('${esc(g.goods_no)}')">管理内容</button>
+        <button class="btn tiny" onclick="openPrice('${esc(g.goods_no)}')">改价</button>
+        <button class="btn tiny ${on ? '' : 'primary'}" onclick="toggleStatus('${esc(g.goods_no)}',${on ? 2 : 1})">${on ? '下架' : '上架'}</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('goodsCnt').textContent = `${STATE.goods.length} 个`;
+  document.getElementById('goodsBox').innerHTML = STATE.goods.length ? `<table>
+    <thead><tr><th>编码</th><th>名称</th><th>成本价</th><th>模式</th><th>可售</th><th>已发</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody>${rows}</tbody></table>` : '<div class="empty">还没有货源商品。点右上角「新建商品」加一个。</div>';
+}
+
+function renderOrders() {
+  const os = STATE.orders;
+  document.getElementById('ordersCnt').textContent = `${os.length} 笔`;
+  if (!os.length) { document.getElementById('ordersBox').innerHTML = '<div class="empty">还没有订单。</div>'; return; }
+  const rows = os.map((o) => {
+    const st = o.order_status === 20 ? '<span class="pill p-ok">已发货</span>'
+      : o.order_status === 30 ? '<span class="pill p-fail">失败</span>' : '<span class="pill p-pend">处理中</span>';
+    const cards = (o.card_items || []).map((c) => `<div class="cchip">${esc(c.card_pwd)}</div>`).join('');
+    return `<tr>
+      <td><div class="gno">${esc(o.order_no)}</div></td>
+      <td class="muted" style="font-size:12px">${esc(o.biz_order_no || '-')}</td>
+      <td>${esc(o.goods_name || o.goods_no || '-')}<div class="gno" style="font-weight:400;color:var(--t3)">${esc(o.goods_no || '')}</div></td>
+      <td class="money">${fen2yuan(o.order_amount)}</td>
+      <td>${st}</td>
+      <td class="muted" style="font-size:12px">${timeStr(o.created_at)}</td>
+      <td>${cards ? `<details><summary>发出的内容</summary><div class="inner">${cards}</div></details>` : '<span class="muted">-</span>'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('ordersBox').innerHTML = `<table>
+    <thead><tr><th>管家订单号</th><th>闲鱼单号</th><th>商品</th><th>金额</th><th>状态</th><th>下单时间</th><th>内容</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
+function renderSubs() {
+  const ss = STATE.subscriptions;
+  document.getElementById('subsCnt').textContent = `${ss.length} 条`;
+  document.getElementById('subsBox').innerHTML = ss.length ? `<table>
+    <thead><tr><th>商品编码</th><th>类型</th><th>token</th><th>notify_url</th><th>订阅时间</th></tr></thead>
+    <tbody>${ss.map((x) => `<tr><td class="gno">${esc(x.goods_no)}</td><td>${esc(x.goods_type)}</td>
+      <td class="muted" style="font-size:12px">${esc(x.token || '-')}</td>
+      <td class="muted" style="font-size:12px;word-break:break-all">${esc(x.notify_url || '-')}</td>
+      <td class="muted" style="font-size:12px">${timeStr(x.subscribe_time)}</td></tr>`).join('')}</tbody></table>`
+    : '<div class="empty">暂无订阅记录。闲管家在「卡密仓库」配置货源商品时会调用订阅接口。</div>';
+}
+
+/* ==================================================== 上架管理 */
+
+async function papi(action, body) {
+  const r = await fetch('/api/pipeline/' + action, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}),
+  });
+  const j = await r.json().catch(() => ({ ok: false, error: '响应不是合法 JSON' }));
+  if (!j.ok) toast(j.error || '操作失败', true);
+  await load();
+  return j;
+}
+
+const STATUS_META = {
+  ready:     { label: '待发布',      cls: 'p-warn' },
+  blocked:   { label: '有阻塞项',    cls: 'p-fail' },
+  pending:   { label: '未生成草稿',  cls: 'p-off'  },
+  published: { label: '已发布',      cls: 'p-on'   },
+  excluded:  { label: '已排除（不再发布）', cls: 'p-fail' },
+  // ⭐ 2026-10-09：台账同步后发现 405 个「已发布」其实被平台下架了。
+  //    单看 status 会误判成"货还挂着"，所以把 down_shelved 独立成一个状态显示。
+  down_shelved: { label: '已下架', cls: 'p-fail' },
+};
+/** 台账里的真实线上状态优先于本地 status：已下架就别再显示「已发布」 */
+const statusOf = (r) => (r?.listing && r.listing.state === 'down_shelved' ? 'down_shelved' : r?.status);
+
+function renderPublish() {
+  if (!PUB) {
+    document.getElementById('pubAlerts').innerHTML = '<div class="warnbox">上架模块快照加载失败，请刷新页面。</div>';
+    return;
+  }
+  const { stats, resources, orphanDrafts, meta } = PUB;
+  const cfg = meta.verifiedConfig || {};
+  document.getElementById('cfgCat').textContent = (cfg.channel_cat_id || '—') + '（其他程序/软件开发）';
+  document.getElementById('cfgShop').textContent = cfg.user_name || '—';
+
+  document.getElementById('pubStats').innerHTML = [
+    ['资源条目', stats.resources_total, ''],
+    ['待发布', stats.ready, ''],
+    ['有阻塞项', stats.blocked, stats.blocked ? 'amber' : ''],
+    ['⛔ 体检违规', stats.preflight_blocked ?? 0, (stats.preflight_blocked ?? 0) ? 'red' : ''],
+    ['已发布', stats.published, ''],
+    ['已排除', excludedN, excludedN ? 'red' : ''],
+  ].map(([k, v, cls]) => `<div class="stat"><div class="k">${k}</div><div class="v ${cls || ''}">${v}</div></div>`).join('');
+
+  // 发布闸门状态（服务端节流）+ 体检告警
+  if (PUB.guard) { guardBase = PUB.guard.wait_ms || 0; guardBaseAt = Date.now(); }
+  renderGuardBar();
+  startGuardTicker();
+
+  const pfBadge = document.getElementById('pfBadge');
+  if (pfBadge) {
+    const n = stats.preflight_blocked ?? 0;
+    pfBadge.textContent = n;
+    pfBadge.classList.toggle('hidden', n === 0);
+  }
+
+  renderCatBar();
+
+  const badge = document.getElementById('pubBadge');
+  const n = stats.ready + stats.blocked;
+  badge.textContent = n;
+  badge.classList.toggle('hidden', n === 0);
+
+  const noLink = resources.filter((r) => !r.baidu?.share_url).length;
+  const noImg = resources.filter((r) => !(r.cover_images || []).length).length;
+  const bad = resources.filter((r) => r.naming && !r.naming.consistent && ((r.baidu?.folders || []).length || (r.quark?.folders || []).length)).length;
+  const excludedN = stats.excluded ?? 0;
+  const pfBad = stats.preflight_blocked ?? 0;
+  const pfWarn = stats.preflight_warned ?? 0;
+  const pfNone = stats.preflight_unknown ?? 0;
+
+  // 体检问题单独用醒目样式 —— 它是「账号会不会被封」级别的事
+  const pfBox = document.getElementById('pfAlert');
+  if (pfBox) {
+    if (pfBad) {
+      pfBox.innerHTML = `<div class="warnbox" style="background:#FDF1F1;border-color:#F3C9C9;color:#7A2020">
+        <b style="color:#A32B2B">⛔ ${pfBad} 个商品体检发现违规内容</b> ——
+        GPT / ChatGPT 等品牌词（图里有也算）、涉黄图片、破解 / 虚假宣传等。
+        这些<b>发布时会被自动拦下</b>，请先改内容。
+        <a href="javascript:switchView('preflight')" style="margin-left:6px">去看详情 →</a>
+      </div>`;
+    } else if (pfWarn) {
+      pfBox.innerHTML = `<div class="warnbox">⚠️ ${pfWarn} 个商品体检有<b>疑似</b>项（图片可能过度暴露等），建议人工确认。<a href="javascript:switchView('preflight')">去看详情 →</a></div>`;
+    } else {
+      pfBox.innerHTML = '';
+    }
+  }
+
+  const alerts = [];
+  if (noLink) alerts.push(`<b>${noLink} 个资源还没有百度分享链接</b> —— 发货内容就是它，没链接发不了货`);
+  if (noImg) alerts.push(`<b>${noImg} 个资源没有封面图</b> —— 闲鱼商品至少要有 1 张公网图片`);
+  if (bad) alerts.push(`<b>${bad} 个资源两侧文件夹命名不一致</b> —— 你要求两侧同名，建议先对齐`);
+  if (pfNone && !pfBad) alerts.push(`<b>${pfNone} 个待发布草稿还没体检过</b> —— 建议先跑一次「上架体检」`);
+  document.getElementById('pubAlerts').innerHTML = alerts.length ? `<div class="warnbox">${alerts.join('；')}。</div>` : '';
+
+  renderQueue();
+  renderResources();
+  renderOrphans(orphanDrafts);
+  // ⚠️ 首次直接打开 #preflight 时，switchView 早于 load() 完成，
+  //    那时 PUB 还是 null，renderPreflight 会直接返回 —— 所以这里补一次。
+  if (VIEW === 'preflight') renderPreflight();
+}
+
+/** 类别筛选条：一眼看清每个类别有多少资源、默认价多少，点一下即筛选 */
+function renderCatBar() {
+  const res = PUB.resources || [];
+  const by = {};
+  for (const r of res) { const k = r.category || ''; by[k] = (by[k] || 0) + 1; }
+  const chips = [];
+  chips.push(`<div class="catchip ${CAT_FILTER === '' ? 'on' : ''}" onclick="setCatFilter('')">
+    <span>全部</span><span class="n">${res.length}</span></div>`);
+  for (const c of catList()) {
+    chips.push(`<div class="catchip ${CAT_FILTER === c.id ? 'on' : ''}" onclick="setCatFilter('${esc(c.id)}')" title="${esc((c.hint || '') + '　→ 发布到 ' + catShop(c.id))}">
+      <span class="dot" style="background:${c.color}"></span>
+      <span>${esc(c.name)}</span><span class="n">${by[c.id] || 0}</span>
+      <span class="p">¥${(c.price_fen / 100).toFixed(2)}</span></div>`);
+  }
+  if (by['']) {
+    chips.push(`<div class="catchip ${CAT_FILTER === '__none__' ? 'on' : ''}" onclick="setCatFilter('__none__')">
+      <span class="dot" style="background:#C4CBD6"></span><span>未分类</span><span class="n">${by['']}</span></div>`);
+  }
+  document.getElementById('catBar').innerHTML = chips.join('');
+}
+
+function renderQueue() {
+  const all = PUB.resources;
+  const list = filterByCat(all);
+  document.getElementById('queueCnt').textContent = CAT_FILTER ? `${list.length} / ${all.length} 项` : `${list.length} 项`;
+  if (!list.length) {
+    document.getElementById('queueBox').innerHTML = `<div class="empty">${CAT_FILTER ? '该类别下暂无资源。' : '还没有资源条目。点右上角「新增资源」开始。'}</div>`;
+    return;
+  }
+  document.getElementById('queueBox').innerHTML = list.map((r, i) => {
+    const st = statusOf(r);
+    const m = STATUS_META[st] || STATUS_META.pending;
+    let sub;
+    if (r.status === 'excluded') {
+      const e = r.exclusion || {};
+      sub = `⛔ 已永久排除，不再发布 —— ${e.reason || ''}（${String(e.at || '').slice(0, 10)}）`;
+    } else if (r.status === 'published') {
+      sub = `闲管家 product_id=${r.listing.product_id}　${r.listing.state_label}`;
+    } else if (r.status === 'blocked') {
+      sub = r.draft_issues.filter((x) => x.level === 'blocker').map((x) => `${x.field}：${x.message}`).join('；');
+    } else if (r.status === 'ready') {
+      sub = `草稿 ${r.draft_code} 已就绪，可发布`;
+    } else {
+      sub = '尚未生成发布草稿';
+    }
+    const code = r.draft_code || '';
+    return `<div class="queue ${r.status === 'blocked' ? 'blocked' : ''} ${r.status === 'excluded' ? 'excluded' : ''} ${r.status === 'published' ? 'done' : ''}">
+      <input class="qcb" type="checkbox" data-id="${esc(r.id)}"${QUEUE_SEL.has(r.id) ? ' checked' : ''}>
+      <div class="num">${i + 1}</div>
+      <div class="qn">
+        <div class="qt">${catPill(r.category)} ${esc(r.display_name || r.name)} <span class="pill ${m.cls}">${m.label}</span>
+          ${queuePreflightPill(r)}
+          <span class="muted" style="font-size:12px;font-weight:500">${r.price_fen ? fen2yuan(r.price_fen) : '未定价'}</span></div>
+        <div class="qs">${esc(sub)}</div>
+      </div>
+      <div class="acts">
+        ${code ? `<button class="btn tiny" onclick="openDraft('${esc(code)}')">查看/改草稿</button>` : ''}
+        ${code ? `<button class="btn tiny" onclick="checkOneDraft('${esc(code)}')">体检</button>` : ''}
+        ${r.status !== 'published' && r.status !== 'excluded' ? `<button class="btn tiny" onclick="genDraft('${esc(r.id)}')">生成草稿</button>` : ''}
+        ${r.status === 'ready' && code ? `<button class="btn tiny primary" onclick="publishOne('${esc(code)}')">发布</button>` : ''}
+        ${r.status === 'published' && code ? `<button class="btn tiny" onclick="syncOne('${esc(code)}')">同步状态</button>` : ''}
+        ${code && r.status !== 'excluded' && r.status !== 'published'
+          ? `<button class="btn tiny danger" onclick="excludeOne('${esc(code)}')">排除</button>` : ''}
+        ${r.status === 'excluded' && code
+          ? `<button class="btn tiny" onclick="unexcludeOne('${esc(code)}')">解除排除</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // 勾选框事件（用委托，避免每行内联 onclick 太长）
+  const box = document.getElementById('queueBox');
+  if (!box._cbBound) {
+    box._cbBound = true;
+    box.addEventListener('change', (ev) => {
+      const t = ev.target;
+      if (t && t.classList && t.classList.contains('qcb')) toggleSel(t.dataset.id, t.checked);
+    });
+  }
+  renderBulkBar();
+}
+
+function renderSide(label, s, other, id, key) {
+  const folders = s?.folders || [];
+  const otherFolders = other?.folders || [];
+  return `<div class="side">
+    <h4>${label}
+      <button class="btn tiny" onclick="scanSide('${esc(id)}','${key}')">扫描目录</button>
+    </h4>
+    <div class="kv"><b>目录　</b>${esc(s?.root || '—')}</div>
+    <div class="kv"><b>分享　</b>${s?.share_url ? `<span class="share">${esc(s.share_url)}</span>` : '<span class="muted">未填</span>'}
+      ${s?.pwd ? `　提取码 <b>${esc(s.pwd)}</b>` : ''}</div>
+    <div class="kv"><b>扫描　</b>${esc(s?.scanned_at || '尚未扫描')}${s?.file_count !== undefined ? `　${s.file_count} 文件 / ${s.dir_count || folders.length} 目录` : ''}</div>
+    ${folders.length
+      ? `<div class="folders">${folders.map((f) => `<span class="fchip ${otherFolders.includes(f) ? '' : 'only'}">${esc(f)}</span>`).join('')}</div>`
+      : '<div class="kv muted">（还没有目录清单，点「扫描目录」获取）</div>'}
+  </div>`;
+}
+
+function renderResources() {
+  const all = PUB.resources;
+  const list = filterByCat(all);
+  document.getElementById('resCnt').textContent = CAT_FILTER ? `${list.length} / ${all.length} 个` : `${list.length} 个`;
+  if (!list.length) { document.getElementById('resBox').innerHTML = ''; return; }
+  document.getElementById('resBox').innerHTML = list.map((r) => {
+    const issues = (r.resource_issues || []).filter((i) => i.level !== 'info');
+    const hasFolders = ((r.baidu?.folders || []).length || (r.quark?.folders || []).length);
+    const namingPill = !hasFolders ? ''
+      : r.naming?.consistent ? '　<span class="pill p-ok">两侧命名一致</span>'
+      : '　<span class="pill p-warn">两侧命名不一致</span>';
+    return `<div class="res">
+      <div class="res-hd">
+        <div>
+          <div class="res-title">${catPill(r.category)} ${esc(r.display_name || r.name)} <span class="res-id">${esc(r.id)}</span></div>
+          <div class="muted" style="font-size:12px;margin-top:3px">
+            售价 ${r.price_fen ? fen2yuan(r.price_fen) : '未设置'}
+            ｜ 发布店铺 ${esc(shopLabel(r.shop || (r.draft ? (r.draft.publish_shop || [])[0]?.user_name : null)))}
+            ${r.shop ? '<span class="qpf warn" title="本条目指定了发布店铺，覆盖类别默认店铺">已指定店铺</span>' : ''}
+            ${r.draft_code ? `　草稿 <span class="gno">${esc(r.draft_code)}</span>` : ''}${namingPill}
+          </div>
+        </div>
+        <div class="acts">
+          <button class="btn tiny primary" onclick="genCard('${esc(r.id)}')">生成商品图</button>
+          <button class="btn tiny" onclick="openResourceEditor('${esc(r.id)}')">编辑</button>
+          <button class="btn tiny danger" onclick="removeResource('${esc(r.id)}')">删除</button>
+        </div>
+      </div>
+      <div class="sides">
+        ${renderSide('百度网盘', r.baidu, r.quark, r.id, 'baidu')}
+        ${renderSide('夸克网盘', r.quark, r.baidu, r.id, 'quark')}
+      </div>
+      ${issues.map((i) => `<div class="issue i-${i.level === 'blocker' ? 'blocker' : 'warn'}">${i.level === 'blocker' ? '阻塞' : '提醒'}　${esc(i.field)}：${esc(i.message)}</div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+function renderOrphans(list) {
+  document.getElementById('orphanCnt').textContent = `${list.length} 个`;
+  if (!list.length) { document.getElementById('orphanBox').innerHTML = '<div class="empty">没有游离草稿。</div>'; return; }
+  document.getElementById('orphanBox').innerHTML = `<table>
+    <thead><tr><th>编码</th><th>标题</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody>${list.map((d) => {
+      const st = statusOf(d);
+      const m = STATUS_META[st] || STATUS_META.pending;
+      return `<tr>
+        <td class="gno">${esc(d.code)}</td>
+        <td class="gname">${esc(d.draft?.publish_shop?.[0]?.title || '-')}</td>
+        <td><span class="pill ${m.cls}">${m.label}</span>${d.listing ? ` <span class="muted" style="font-size:11.5px">${esc(d.listing.state_label)}</span>` : ''}</td>
+        <td><div class="acts">
+          <button class="btn tiny" onclick="openDraft('${esc(d.code)}')">查看/改</button>
+          ${d.status === 'ready' ? `<button class="btn tiny primary" onclick="publishOne('${esc(d.code)}')">发布</button>` : ''}
+          ${d.status === 'published' ? `<button class="btn tiny" onclick="syncOne('${esc(d.code)}')">同步状态</button>` : ''}
+        </div></td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+/* ---------- 按类别改价 ---------- */
+
+function openReprice() {
+  const cats = catList();
+  if (!cats.length) { toast('类别定义未加载', true); return; }
+  MODAL = { type: 'reprice', goodsNo: null };
+  const by = (PUB.stats && PUB.stats.by_category) || {};
+  openModal(`
+    <div class="modal-hd"><h3>按类别统一改价</h3>
+      <button class="btn tiny" onclick="closeModal()">关闭</button></div>
+    <div class="modal-bd">
+      <div class="issue i-info">把该类别下的所有资源（以及它们已生成的发布草稿）售价统一成同一个值 —— 不用逐条手改，也不会出现「资源改了、草稿还是旧价」。</div>
+      <div class="field"><label>类别</label>
+        <select id="rp_cat" onchange="onRepriceCat()">
+          ${cats.map((c) => `<option value="${esc(c.id)}" data-price="${c.price_fen}">${esc(c.name)} · 默认 ¥${(c.price_fen / 100).toFixed(2)}　（${by[c.id] || 0} 个资源）</option>`).join('')}
+        </select></div>
+      <div class="field"><label>统一为（元）</label>
+        <input id="rp_price" type="number" step="0.01">
+        <div class="hint">默认填该类别默认价，可以改成别的</div></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeModal()">取消</button>
+      <button class="btn primary" onclick="doReprice()">执行</button>
+    </div>`);
+  onRepriceCat();
+}
+
+function onRepriceCat() {
+  const sel = document.getElementById('rp_cat');
+  const p = document.getElementById('rp_price');
+  const opt = sel && sel.selectedOptions[0];
+  if (opt && p) p.value = (Number(opt.dataset.price) / 100).toFixed(2);
+}
+
+async function doReprice() {
+  const cat = document.getElementById('rp_cat').value;
+  const yuan = parseFloat(document.getElementById('rp_price').value);
+  const c = catOf(cat);
+  const target = Number.isFinite(yuan) && yuan > 0 ? `¥${yuan.toFixed(2)}` : `类别默认价 ¥${(((c && c.price_fen) || 0) / 100).toFixed(2)}`;
+  if (!confirm(`把「${c ? c.name : cat}」下所有资源（及其草稿）的售价统一为 ${target}？`)) return;
+  const j = await papi('category.reprice', {
+    category: cat,
+    price_fen: Number.isFinite(yuan) && yuan > 0 ? Math.round(yuan * 100) : undefined,
+  });
+  if (j && j.ok) { closeModal(); toast(j.message); }
+}
+
+/** 切换类别：若售价为空、或正好等于上一个类别的默认价 → 自动跟随新类别默认价 */
+function onCatChange() {
+  const sel = document.getElementById('r_cat');
+  const pEl = document.getElementById('r_price');
+  const hint = document.getElementById('r_cat_hint');
+  if (!sel || !pEl) return;
+  const opt = sel.selectedOptions[0];
+  const dftFen = opt && opt.dataset.price ? Number(opt.dataset.price) : 0;
+  const dft = dftFen ? (dftFen / 100).toFixed(2) : '';
+  const cur = parseFloat(pEl.value);
+  const last = pEl.dataset.last || '';
+  if (!Number.isFinite(cur) || cur <= 0 || String(pEl.value).trim() === last) pEl.value = dft;
+  pEl.dataset.last = dft;
+  const c = catOf(sel.value);
+  if (hint) {
+    hint.textContent = c
+      ? `${c.hint || c.name}　默认 ¥${(c.price_fen / 100).toFixed(2)}　→ 发布到 ${catShop(c.id)}`
+      : '未分类：售价需要自己填，店铺用全局默认';
+  }
+}
+
+/* ---------- 资源条目编辑 ---------- */
+
+function openResourceEditor(id) {
+  const r = id ? PUB.resources.find((x) => x.id === id) : null;
+  MODAL = { type: 'resource', goodsNo: id || null };
+  const v = (x) => esc(x == null ? '' : x);
+  openModal(`
+    <div class="modal-hd"><h3>${r ? '编辑资源条目' : '新增资源条目'}</h3>
+      <button class="btn tiny" onclick="closeModal()">关闭</button></div>
+    <div class="modal-bd">
+      <div class="row2">
+        <div class="field"><label>资源标识（id）</label>
+          <input id="r_id" value="${v(r?.id)}" ${r ? 'readonly' : ''} placeholder="如 figma">
+          <div class="hint">两侧目录用同一个名字，也作为草稿编码的一部分</div></div>
+        <div class="field"><label>展示名</label>
+          <input id="r_name" value="${v(r?.display_name)}" placeholder="如 Figma 汉化版"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>类别</label>
+          <select id="r_cat" onchange="onCatChange()">
+            <option value="">（未分类）</option>
+            ${catList().map((c) => `<option value="${esc(c.id)}" data-price="${c.price_fen}"${r?.category === c.id ? ' selected' : ''}>${esc(c.name)} · 默认 ¥${(c.price_fen / 100).toFixed(2)}</option>`).join('')}
+          </select>
+          <div class="hint" id="r_cat_hint">类别决定默认定价与发布店铺</div></div>
+        <div class="field"><label>售价（元）</label>
+          <input id="r_price" type="number" step="0.01" value="${r?.price_fen ? (r.price_fen / 100).toFixed(2) : ''}" placeholder="留空 = 用类别默认价">
+          <div class="hint">留空保存时会自动套用该类别默认价</div></div>
+      </div>
+      <div class="field"><label>发布店铺（留空 = 用类别默认店铺）</label>
+        <select id="r_shop">
+          <option value="">（用类别默认店铺）</option>
+          ${(PUB.shops || []).map((s) => `<option value="${esc(s.user_name)}"${(r?.shop || '') === s.user_name ? ' selected' : ''}>${esc(s.label)} · ${esc(s.user_name)}${s.note ? ' · ' + esc(s.note) : ''}</option>`).join('')}
+        </select>
+        <div class="hint">⚠️ 开了这个就以它为准，覆盖类别默认店铺。账号被封控/限流时改这里；不改的话，
+          下次「生成草稿」会把临时改过的草稿悄悄退回默认店铺。</div></div>
+      <div class="field"><label>备注（合规结论等，只给自己看）</label>
+        <input id="r_notes" value="${v(r?.notes)}" placeholder="如：自有版权 / 待确认">
+        <div class="hint">不会出现在商品内容里</div></div>
+
+      <div class="field"><label>百度网盘</label>
+        <input id="r_b_root" value="${v(r?.baidu?.root)}" placeholder="/apps/闲鱼商品分享链接管理/仓/待售/软件/figma" style="width:100%;margin-bottom:8px">
+        <div class="row2">
+          <input id="r_b_url" value="${v(r?.baidu?.share_url)}" placeholder="分享链接 https://pan.baidu.com/s/...">
+          <input id="r_b_pwd" value="${v(r?.baidu?.pwd)}" placeholder="提取码">
+        </div>
+        <div class="hint">链接和提取码是**发货内容**，保存后可以在商品卡片上核对</div>
+      </div>
+
+      <div class="field"><label>夸克网盘</label>
+        <input id="r_q_root" value="${v(r?.quark?.root)}" placeholder="夸克网盘/figma（用 / 分隔路径）" style="width:100%;margin-bottom:8px">
+        <div class="row2">
+          <input id="r_q_url" value="${v(r?.quark?.share_url)}" placeholder="分享链接 https://pan.quark.cn/s/...">
+          <input id="r_q_pwd" value="${v(r?.quark?.pwd)}" placeholder="提取码">
+        </div>
+      </div>
+
+      <div class="field"><label>封面图（每行一个公网 URL）</label>
+        <textarea id="r_imgs" placeholder="https://...">${v((r?.cover_images || []).join('\n'))}</textarea>
+        <div class="hint">闲鱼商品至少 1 张；必须是闲鱼服务器能抓到的公网图片</div>
+      </div>
+
+      <div class="issue i-info">保存后回到卡片上，点各侧的「扫描目录」拉取文件夹清单 —— 两侧同名会自动比对。</div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeModal()">取消</button>
+      <button class="btn primary" onclick="saveResource()">保存</button>
+    </div>`);
+
+  // 记住「当前价格的来源」：已归类的记类别默认价，未归类的记当前价本身
+  // → 切换类别时，价格只要没被手改过就自动跟随新类别默认价
+  const pEl = document.getElementById('r_price');
+  if (pEl) {
+    const dft = (catOf(r && r.category) || {}).price_fen;
+    pEl.dataset.last = r && r.category && dft
+      ? (dft / 100).toFixed(2)
+      : (r && r.price_fen ? (r.price_fen / 100).toFixed(2) : '');
+  }
+  // 刷新「默认价 + 发布到哪个店」的提示（初始化时也跑一次）
+  onCatChange();
+}
+
+async function saveResource() {
+  const val = (id) => (document.getElementById(id)?.value || '').trim();
+  const id = val('r_id');
+  if (!id) { toast('资源标识必填', true); return; }
+  const priceYuan = parseFloat(val('r_price'));
+  const body = {
+    id,
+    name: id,
+    display_name: val('r_name') || id,
+    // 空字符串代表「取消分类」，服务端会清掉该字段
+    category: val('r_cat') || '',
+    // 留空则由服务端套用该类别默认价
+    price_fen: Number.isFinite(priceYuan) && priceYuan > 0 ? Math.round(priceYuan * 100) : undefined,
+    notes: val('r_notes') || undefined,
+    // 空字符串 = 清除覆盖，回到类别默认店铺（服务端语义：显式传 '' 才清除）
+    shop: val('r_shop'),
+    cover_images: val('r_imgs').split('\n').map((s) => s.trim()).filter(Boolean),
+    baidu: { root: val('r_b_root'), share_url: val('r_b_url'), pwd: val('r_b_pwd') },
+    quark: { root: val('r_q_root'), share_url: val('r_q_url'), pwd: val('r_q_pwd') },
+  };
+  // 保留已有的扫描结果（folders / scanned_at），避免编辑时被清空
+  const prev = PUB.resources.find((x) => x.id === id);
+  if (prev) {
+    body.baidu.folders = prev.baidu?.folders || [];
+    body.baidu.scanned_at = prev.baidu?.scanned_at;
+    body.baidu.file_count = prev.baidu?.file_count;
+    body.quark.folders = prev.quark?.folders || [];
+    body.quark.scanned_at = prev.quark?.scanned_at;
+    body.quark.file_count = prev.quark?.file_count;
+    if (prev.quark?.fid) body.quark.fid = prev.quark.fid;
+  }
+  const j = await papi('resource.save', body);
+  if (j?.ok) { closeModal(); toast(j.message); }
+}
+
+async function removeResource(id) {
+  if (!confirm(`删除资源条目 ${id}？\n\n（只删本地条目，不会动网盘里的文件，也不会影响已发布的商品）`)) return;
+  const j = await papi('resource.remove', { id });
+  if (j?.ok) toast(j.message);
+}
+
+async function scanSide(id, key) {
+  const r = PUB.resources.find((x) => x.id === id);
+  if (!r) return;
+  if (key === 'baidu') {
+    const dir = r.baidu?.root;
+    if (!dir) { toast('先编辑条目，填上百度侧目录路径', true); return; }
+    toast('正在扫描百度网盘…');
+    const j = await papi('resource.scanBaidu', { dir });
+    if (!j?.ok) return;
+    const s = j.scan;
+    await papi('resource.applyScan', {
+      id,
+      baidu: { root: dir, share_url: r.baidu.share_url, pwd: r.baidu.pwd, folders: s.folders, file_count: s.fileCount, size_bytes: s.sizeBytes },
+    });
+    toast(`百度侧：${s.dirCount} 个目录 / ${s.fileCount} 个文件`);
+  } else {
+    const root = r.quark?.root || '';
+    const segs = root.replace(/^夸克网盘\/?/, '').split('/').map((x) => x.trim()).filter(Boolean);
+    toast('正在扫描夸克网盘（需要几秒）…');
+    const j = await papi('resource.scanQuark', { segments: segs });
+    if (!j?.ok) return;
+    const s = j.scan;
+    await papi('resource.applyScan', {
+      id,
+      quark: { root: s.fullPath || root, fid: s.fid, share_url: r.quark?.share_url, pwd: r.quark?.pwd, folders: s.folders, file_count: s.fileCount, size_bytes: s.sizeBytes },
+    });
+    toast(`夸克侧：${s.dirCount} 个目录 / ${s.fileCount} 个文件`);
+  }
+}
+
+/* ---------- 商品图 ---------- */
+
+async function genCard(id) {
+  const r = PUB.resources.find((x) => x.id === id);
+  const name = r ? r.display_name || r.name : id;
+  toast(`正在为「${name}」生成商品图（约 5~10 秒）…`);
+  const j = await papi('card.generate', { id });
+  if (!j?.ok) return;
+  toast(j.message);
+  if (!j.url) return;
+
+  openModal(`
+    <div class="modal-hd"><h3>商品图 · ${esc(name)}</h3>
+      <button class="btn tiny" onclick="closeModal()">关闭</button></div>
+    <div class="modal-bd">
+      <div style="text-align:center;background:#F7F8FA;border-radius:10px;padding:14px">
+        <img src="${esc(j.url)}" alt="商品图" style="max-width:100%;border-radius:8px;box-shadow:0 4px 18px rgba(16,24,40,.12)">
+      </div>
+      <div class="field" style="margin-top:16px">
+        <label>公网地址（已写入该资源的封面图字段）</label>
+        <div class="share" style="user-select:all;display:block">${esc(j.url)}</div>
+        <div class="hint">闲鱼抓图用的就是这个地址，无防盗链、国内直连</div>
+      </div>
+      ${j.spec ? `<div class="issue i-info">自动推断：主图标 <b>${esc(j.spec.logo)}</b>　平台 <b>${esc((j.spec.platforms || []).join(' / '))}</b>${j.spec.subtitle ? `　副标题「${esc(j.spec.subtitle)}」` : ''}</div>` : ''}
+      <div class="issue i-warn">图不满意？直接改 <code>packages/xgj-admin/src/card-render.ts</code> 里的模板，或告诉我你要改什么</div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeModal()">关闭</button>
+      <button class="btn primary" onclick="window.open('${esc(j.url)}','_blank')">在新标签打开</button>
+    </div>`);
+}
+
+async function pingMediaNow() {
+  toast('正在测试图床…');
+  const j = await papi('media.ping', {});
+  if (j?.ok) toast(j.message + (j.detail ? ` · ${j.detail}` : ''));
+}
+
+/* ---------- 草稿 ---------- */
+
+async function genDraft(id) {
+  const j = await papi('draft.generate', { id });
+  if (j?.ok) toast(j.message);
+}
+
+function openDraft(code) {
+  const all = [...PUB.resources.map((r) => ({ code: r.draft_code, draft: r.draft, issues: r.draft_issues })), ...PUB.orphanDrafts];
+  const hit = all.find((x) => x.code === code);
+  if (!hit?.draft) { toast('找不到这个草稿', true); return; }
+  const d = hit.draft, shop = (d.publish_shop || [])[0] || {};
+  const blockers = (hit.issues || []).filter((i) => i.level === 'blocker');
+  const warns = (hit.issues || []).filter((i) => i.level === 'warn');
+  MODAL = { type: 'draft', goodsNo: code };
+  openModal(`
+    <div class="modal-hd"><h3>发布草稿 · ${esc(code)}</h3>
+      <button class="btn tiny" onclick="closeModal()">关闭</button></div>
+    <div class="modal-bd">
+      ${blockers.map((i) => `<div class="issue i-blocker">阻塞　${esc(i.field)}：${esc(i.message)}</div>`).join('')}
+      ${warns.map((i) => `<div class="issue i-warn">提醒　${esc(i.field)}：${esc(i.message)}</div>`).join('')}
+      ${!blockers.length && !warns.length ? '<div class="issue i-ok">体检通过，可以发布</div>' : ''}
+
+      <div class="field" style="margin-top:14px"><label>标题（闲鱼上限 30，数字与特殊字符各占 2 位）</label>
+        <input id="d_title" value="${esc(shop.title)}" style="width:100%">
+        <div class="hint" id="d_title_w"></div></div>
+
+      <div class="field"><label>售价（元）</label>
+        <input id="d_price" type="number" step="0.01" value="${((d.price || 0) / 100).toFixed(2)}" style="width:180px"></div>
+
+      <div class="field"><label>商品描述</label>
+        <textarea id="d_content" style="min-height:200px">${esc(shop.content)}</textarea>
+        <div class="hint">⚠️ 不要把分享链接写进描述 —— 链接是发货内容，写进去买家不买也能拿到</div></div>
+
+      <div class="field"><label>封面图（每行一个 URL）</label>
+        <textarea id="d_images">${esc((shop.images || []).join('\n'))}</textarea></div>
+
+      <div class="row2">
+        <div class="field"><label>发布店铺（闲鱼会员名）</label>
+          <input id="d_shop" value="${esc(shop.user_name)}"></div>
+        <div class="field"><label>类目 ID</label>
+          <input id="d_cat" value="${esc(d.channel_cat_id)}"></div>
+      </div>
+
+      <label class="toggle" style="margin-top:6px">
+        <input type="checkbox" id="d_clean" ${d.compliance?.clean ? 'checked' : ''}> 我已确认版权/授权来源，允许上架
+      </label>
+      <div class="hint" style="margin-top:4px">这一项不勾选，草稿会一直卡在「有阻塞项」—— 这是刻意设计的闸门</div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeModal()">取消</button>
+      <button class="btn primary" onclick="saveDraft('${esc(code)}')">保存草稿</button>
+    </div>`);
+  const upd = () => { const t = document.getElementById('d_title').value;
+    document.getElementById('d_title_w').textContent = `当前权重 ${titleWeight(t)} / 30`; };
+  document.getElementById('d_title').addEventListener('input', upd); upd();
+}
+
+function titleWeight(s) {
+  let w = 0;
+  for (const ch of String(s || '')) {
+    w += (/[0-9]/.test(ch) || !/[\u4e00-\u9fa5a-zA-Z]/.test(ch)) ? 2 : 1;
+  }
+  return w;
+}
+
+async function saveDraft(code) {
+  const val = (id) => document.getElementById(id)?.value ?? '';
+  const patch = {
+    title: val('d_title').trim(),
+    content: val('d_content'),
+    price: Math.round(parseFloat(val('d_price')) * 100),
+    images: val('d_images').split('\n').map((s) => s.trim()).filter(Boolean),
+    user_name: val('d_shop').trim(),
+    category_id: val('d_cat').trim(),
+    compliance_clean: document.getElementById('d_clean').checked,
+  };
+  const j = await papi('draft.save', { code, patch });
+  if (j?.ok) { closeModal(); toast(j.message); }
+}
+
+/* ---------- 发布 ---------- */
+
+async function publishOne(code) {
+  if (!confirm(`确认把 ${code} 发布到闲鱼？\n\n这是真实上架操作，会在店铺里生成商品。\n上架是异步的，提交后请点「同步状态」核对真实结果。`)) return;
+  const j = await papi('publish.run', { code, confirm: true });
+  if (j?.ok) { toast(j.message); return; }
+
+  /* ⭐ 2026-10-09：两种「不全是失败」的边界，不能再一律弹红字
+     · PUBLISH_VERIFIED_ON_SALE —— 接口报错，但核对后其实**已在售**（重复上架被拒）
+     · SHOP_BLOCKED —— 目标店铺被标记不可用（封控/下架），可显式强行发布 */
+  if (j?.code === 'PUBLISH_VERIFIED_ON_SALE') {
+    toast(`实际已在售（item_id=${j.verification?.item_id ?? '-'}），无需重试`);
+    return;
+  }
+  if (j?.code === 'SHOP_BLOCKED') {
+    if (confirm(`${j.error}\n\n仍要强行发布吗？（会占用一次 300 秒名额）`)) {
+      const j2 = await papi('publish.run', { code, confirm: true, forceShop: true });
+      if (j2?.ok) toast(j2.message);
+    }
+    return;
+  }
+  if (j?.retry_hint) toast(j.retry_hint, true);
+}
+
+/* ============================================================
+   队列勾选与批量操作
+   ============================================================ */
+let QUEUE_SEL = new Set();
+
+/** 当前筛选下可见的队列项 */
+function visibleQueue() {
+  return filterByCat(PUB.resources);
+}
+
+function queuePreflightPill(r) {
+  const p = r.preflight;
+  if (!r.draft_code) return '';
+  if (!p) return '<span class="qpf none">未体检</span>';
+  if (p.blocked) return `<span class="qpf bad" title="${esc((p.block || []).join('\n').slice(0, 300))}">⛔ 违规 ${p.blocked}</span>`;
+  if (p.warned) return `<span class="qpf warn" title="${esc((p.warn || []).join('\n').slice(0, 300))}">⚠️ 疑似 ${p.warned}</span>`;
+  return '<span class="qpf ok">✅ 体检通过</span>';
+}
+
+function renderBulkBar() {
+  const el = document.getElementById('bulkBar');
+  if (!el) return;
+  const vis = visibleQueue();
+  const sel = vis.filter((r) => QUEUE_SEL.has(r.id));
+  const g = (PUB && PUB.guard) || { min_interval_sec: 300 };
+  const pubSel = sel.filter((r) => r.status === 'ready' && r.draft_code);
+  const pendSel = sel.filter((r) => r.status === 'pending' || (r.status === 'ready' && !r.draft_code));
+  const doneSel = sel.filter((r) => r.status === 'published' && r.draft_code);
+  const mins = Math.round((pubSel.length * (g.min_interval_sec || 300)) / 60);
+
+  el.className = 'bulkbar' + (sel.length ? ' on' : '');
+  el.innerHTML = `
+    <span>已勾选 <span class="cnt2">${sel.length}</span> 个</span>
+    <button class="btn tiny" onclick="selAll(true)">全选当前 ${vis.length}</button>
+    <button class="btn tiny" onclick="selAll(false)">取消勾选</button>
+    <button class="btn tiny" onclick="selInvert()">反选</button>
+    <span class="sep"></span>
+    <button class="btn tiny" onclick="batchGenDraft()" ${pendSel.length ? '' : 'disabled'}>批量生成草稿 ${pendSel.length || ''}</button>
+    <button class="btn tiny" onclick="batchSync()" ${doneSel.length ? '' : 'disabled'}>批量同步状态 ${doneSel.length || ''}</button>
+    <button class="btn tiny" onclick="batchPreflightSelected(false)" ${sel.length ? '' : 'disabled'}>体检选中（文字）</button>
+    <button class="btn tiny" onclick="batchPreflightSelected(true)" ${sel.length ? '' : 'disabled'}>体检选中（+图片）</button>
+    <button class="btn tiny primary" onclick="batchPublish()" ${pubSel.length ? '' : 'disabled'}>发布选中 ${pubSel.length || ''}</button>
+    <button class="btn tiny danger" onclick="batchExclude()" ${sel.length ? '' : 'disabled'}>排除选中 ${sel.length || ''}</button>
+    ${pubSel.length ? `<span class="muted">≈ 需 ${mins} 分钟（服务端节流 ${g.min_interval_sec} 秒/个）</span>` : ''}
+  `;
+}
+
+function selAll(on) {
+  const vis = visibleQueue();
+  if (on) vis.forEach((r) => QUEUE_SEL.add(r.id));
+  else vis.forEach((r) => QUEUE_SEL.delete(r.id));
+  renderQueue();
+}
+function selInvert() {
+  visibleQueue().forEach((r) => (QUEUE_SEL.has(r.id) ? QUEUE_SEL.delete(r.id) : QUEUE_SEL.add(r.id)));
+  renderQueue();
+}
+function toggleSel(id, on) {
+  if (on) QUEUE_SEL.add(id); else QUEUE_SEL.delete(id);
+  renderBulkBar();
+}
+
+function setQueueSearch(v) {
+  Q_SEARCH = v || '';
+  renderQueue(); renderResources();
+  const n = visibleQueue().length;
+  const hint = document.getElementById('qHint');
+  if (hint) hint.textContent = (Q_SEARCH || Q_STATUS) ? `命中 ${n} 个` : '';
+}
+function setQueueStatus(v) {
+  Q_STATUS = v || '';
+  renderQueue(); renderResources();
+  const n = visibleQueue().length;
+  const hint = document.getElementById('qHint');
+  if (hint) hint.textContent = (Q_SEARCH || Q_STATUS) ? `命中 ${n} 个` : '';
+}
+
+/* ---------------------------- 批量动作 ---------------------------- */
+
+async function batchGenDraft() {
+  const vis = visibleQueue();
+  const list = vis.filter((r) => QUEUE_SEL.has(r.id) && (r.status === 'pending' || (r.status === 'ready' && !r.draft_code)));
+  if (!list.length) { toast('勾选项里没有需要生成草稿的', true); return; }
+  if (!confirm(`为勾选的 ${list.length} 个资源生成发布草稿？\n\n（只是生成草稿，不会上架）`)) return;
+  let ok = 0, fail = 0;
+  for (const r of list) {
+    toast(`生成草稿中… ${r.display_name || r.name}（${ok + fail + 1}/${list.length}）`);
+    const j = await papiQuiet('draft.generate', { id: r.id });
+    if (j?.ok) ok++; else fail++;
+  }
+  await load();
+  toast(`生成草稿：成功 ${ok}，失败 ${fail}`, fail > 0);
+}
+
+async function batchSync() {
+  const vis = visibleQueue();
+  const list = vis.filter((r) => QUEUE_SEL.has(r.id) && r.status === 'published' && r.draft_code);
+  if (!list.length) { toast('勾选项里没有可同步的已发布商品', true); return; }
+  let ok = 0, fail = 0;
+  for (const r of list) {
+    toast(`同步中… ${r.display_name || r.name}（${ok + fail + 1}/${list.length}）`);
+    const j = await papiQuiet('publish.sync', { code: r.draft_code });
+    if (j?.ok) ok++; else fail++;
+  }
+  await load();
+  toast(`同步完成：成功 ${ok}，失败 ${fail}`, fail > 0);
+}
+
+async function batchPreflightSelected(withImages) {
+  const vis = visibleQueue();
+  const codes = vis.filter((r) => QUEUE_SEL.has(r.id) && r.draft_code).map((r) => r.draft_code);
+  if (!codes.length) { toast('勾选项里没有草稿可体检', true); return; }
+  toast(`正在体检 ${codes.length} 个${withImages ? '（含图片，首次较慢）' : ''}…`);
+  const j = await papiQuiet('preflight.check', { codes, images: withImages });
+  if (!j?.ok) { toast(j?.error || '体检失败', true); return; }
+  await load();
+  toast(j.message || '体检完成');
+  const bad = (j.results || []).filter((x) => x.block.length);
+  if (bad.length) {
+    toast(`⛔ ${bad.length} 个违规：${bad.slice(0, 3).map((x) => x.code).join('、')}${bad.length > 3 ? ' …' : ''}`, true);
+  }
+}
+
+async function batchPublish() {
+  const vis = visibleQueue();
+  const list = vis.filter((r) => QUEUE_SEL.has(r.id) && r.status === 'ready' && r.draft_code);
+  if (!list.length) { toast('勾选项里没有可发布的（需要有草稿且无阻塞项）', true); return; }
+  await publishList(list, '勾选的');
+}
+
+/* ---------------------------- 永久排除 ---------------------------- */
+
+/** 把「体检违规」的勾选项一次性排除 —— 默认原因直接取体检命中项 */
+async function batchExclude() {
+  const vis = visibleQueue();
+  const sel = vis.filter((r) => QUEUE_SEL.has(r.id) && r.draft_code);
+  if (!sel.length) { toast('请先勾选要排除的商品', true); return; }
+  if (!confirm(
+    `把勾选的 ${sel.length} 个商品标记为「永久排除，不再发布」？\n\n` +
+    `它们不会再出现在待发布队列里，发布时会被直接拒绝。\n` +
+    `（草稿保留，方便回看为什么排除；需要时可以「解除排除」）`)) return;
+  const codes = sel.map((r) => r.draft_code);
+  const j = await papiQuiet('draft.exclude', {
+    codes,
+    reason: '人工批量排除（内容违规 / 侵权 / 法定违禁品）',
+  });
+  if (j?.ok) toast(j.message || '已排除');
+  await load();
+}
+
+/** 一键把全部「体检违规」项排除（后台列表里那种一眼就知道不能发的） */
+async function excludeAllFlagged() {
+  const bad = PUB.resources.filter((r) => r.draft_code && (r.preflight?.blocked ?? 0) > 0 && r.status !== 'excluded');
+  if (!bad.length) { toast('没有体检违规且未被排除的商品', true); return; }
+  const names = bad.map((r, i) => `${i + 1}. ${r.draft_code}  ${String(r.display_name || '').slice(0, 26)}`).join('\n');
+  if (!confirm(`把 ${bad.length} 个体检违规的商品全部标记为「永久排除，不再发布」？\n\n${names}`)) return;
+  const j = await papiQuiet('draft.exclude', {
+    codes: bad.map((r) => r.draft_code),
+    reason: '体检违规（文字/图片命中违禁内容）',
+    hits: bad.map((r) => (r.preflight?.block || [])[0] || '').filter(Boolean),
+  });
+  if (j?.ok) toast(j.message || '已排除');
+  await load();
+}
+
+async function excludeOne(code) {
+  const reason = prompt(`把 ${code} 标记为「永久排除，不再发布」？\n\n请填写原因（会记录下来）：`,
+    '内容违规 / 侵权 / 法定违禁品');
+  if (reason === null) return;
+  const j = await papiQuiet('draft.exclude', { codes: [code], reason: reason || undefined });
+  if (j?.ok) toast(j.message);
+  await load();
+}
+
+async function unexcludeOne(code) {
+  if (!confirm(`解除 ${code} 的排除？\n\n解除后它可以再次发布 —— 请确认内容已经合规。`)) return;
+  const j = await papiQuiet('draft.unexclude', { code });
+  if (j?.ok) toast(j.message);
+  await load();
+}
+
+/* ============================================================
+   发布闸门（服务端节流 + 体检）相关
+   ⚠️ 护栏在服务端（packages/xgj-admin/src/publish-guard.ts），这里只是显示与配合等待。
+   2026-10-08：后台原先进度为 900 毫秒一个，导致闲鱼批量下架约 405 个在售商品。
+   ============================================================ */
+let PUB_BATCH = { running: false, stop: false };
+let GUARD_TICKER = null;
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** 不做 load() 的静默调用 —— 批量循环里每次都全量刷新太慢 */
+async function papiQuiet(action, body) {
+  try {
+    const r = await fetch('/api/pipeline/' + action, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}),
+    });
+    return await r.json().catch(() => ({ ok: false, error: '响应不是合法 JSON' }));
+  } catch (e) {
+    return { ok: false, error: '网络错误：' + e.message };
+  }
+}
+
+function renderGuardBar() {
+  const el = document.getElementById('guardBar');
+  if (!el) return;
+  const g = (PUB && PUB.guard) || { min_interval_sec: 300, wait_ms: 0, today_count: 0 };
+  // 用本地时钟推进倒计时，避免每秒打接口
+  let wait = g.wait_ms || 0;
+  if (g.next_at) {
+    wait = Math.max(0, Date.parse(g.next_at) - Date.now());
+  } else if (guardBase && guardBaseAt) {
+    wait = Math.max(0, guardBase - (Date.now() - guardBaseAt));
+  }
+  const secs = Math.ceil(wait / 1000);
+  el.innerHTML = `
+    <span>发布节流：<b>每 ${g.min_interval_sec} 秒最多提交 1 个</b></span>
+    <span>状态：${secs > 0 ? `<span class="wait">等待中，${secs} 秒后可发</span>` : '<span class="ok">✓ 现在可以发</span>'}</span>
+    <span>今日已提交：<b>${g.today_count || 0}</b> 个</span>
+    <span class="sep"></span>
+    ${PUB_BATCH.running
+      ? `<span class="wait">批量发布进行中…</span><button class="btn tiny danger" onclick="stopBatch()">停止批量</button>`
+      : `<button class="btn tiny" onclick="refreshGuard()">刷新节流状态</button>`}
+  `;
+}
+
+let guardBase = 0, guardBaseAt = 0;
+function startGuardTicker() {
+  if (GUARD_TICKER) return;
+  GUARD_TICKER = setInterval(() => { if (VIEW === 'publish') renderGuardBar(); }, 1000);
+}
+
+async function refreshGuard() {
+  const j = await papiQuiet('guard.status', {});
+  if (j?.guard && PUB) {
+    PUB.guard = j.guard;
+    guardBase = j.guard.wait_ms || 0;
+    guardBaseAt = Date.now();
+  }
+  renderGuardBar();
+}
+
+function stopBatch() {
+  PUB_BATCH.stop = true;
+  toast('已请求停止 —— 当前这一次提交完成后就会停');
+}
+
+/**
+ * 按顺序发布待发布队列。
+ * ⚠️ 与旧版的区别：旧版写死 900ms 间隔、且不看服务端返回 ——
+ *    现在**完全由服务端节流决定节奏**，前端只负责等待与重试。
+ */
+/**
+ * 按顺序发布一批商品（勾选的，或整个待发布队列）。
+ * ⚠️ 与旧版的区别：旧版写死 900ms 间隔、且不看服务端返回 ——
+ *    现在**完全由服务端节流决定节奏**，前端只负责等待与重试。
+ */
+async function publishList(list, label) {
+  if (PUB_BATCH.running) { toast('已有批量发布在进行中', true); return; }
+  if (!list.length) { toast('没有可发布的项', true); return; }
+
+  const g = (PUB && PUB.guard) || { min_interval_sec: 300 };
+  const blocked = list.filter((r) => (r.preflight?.blocked ?? 0) > 0);
+  const mins = Math.round((list.length * (g.min_interval_sec || 300)) / 60);
+
+  const warn = [
+    `将发布${label}的 ${list.length} 个商品。`,
+    ``,
+    `⚠️ 服务端节流：每 ${g.min_interval_sec} 秒最多提交 1 个。`,
+    `   预计耗时约 ${mins} 分钟（${(mins / 60).toFixed(1)} 小时）—— 这是刻意的，快了会被判风控`,
+    `   （2026-10-08 就是因为发太快，闲鱼批量下架了约 405 个在售商品）。`,
+    ``,
+    `每个商品提交前会自动体检（文字 + 图片），违规的会被跳过。`,
+  ];
+  if (blocked.length) warn.push(``, `其中 ${blocked.length} 个已被体检判定违规，会自动跳过。`);
+  warn.push(``, `确认开始？中途可以点「停止批量」。`);
+  if (!confirm(warn.join('\n'))) return;
+
+  PUB_BATCH = { running: true, stop: false };
+  renderGuardBar();
+
+  const total = list.length;
+  let ok = 0, fail = 0, skipped = 0, stopped = false;
+
+  for (const r of list) {
+    if (PUB_BATCH.stop) { stopped = true; break; }
+    const n = ok + fail + skipped + 1;
+    const name = r.display_name || r.name;
+
+    // 服务端可能因节流拒绝 —— 等到可以发，再重试同一个
+    let attempts = 0;
+    let done = false;
+    while (!done) {
+      if (PUB_BATCH.stop) { stopped = true; break; }
+      toast(`[${n}/${total}] ${name} 提交中…`);
+      const j = await papiQuiet('publish.run', { code: r.draft_code, confirm: true });
+
+      // 接口报错但核对后已在售 → 按成功计（2026-10-09 加）
+      if (j?.ok || j?.code === 'PUBLISH_VERIFIED_ON_SALE') {
+        ok++;
+        toast(`[${n}/${total}] ${name} ${j.ok ? '已提交' : '已在售'}（${ok} 成功）`);
+        done = true;
+        break;
+      }
+
+      if (j?.code === 'RATE_LIMIT') {
+        const wait = Math.max(1000, Number(j.wait_ms) || 30000) + 2000;
+        const until = Date.now() + wait;
+        while (Date.now() < until) {
+          if (PUB_BATCH.stop) break;
+          const left = Math.ceil((until - Date.now()) / 1000);
+          toast(`[${n}/${total}] 节流等待中，${left} 秒后重试 ${name}`);
+          await sleep(Math.min(1000, Math.max(200, until - Date.now())));
+        }
+        if (PUB_BATCH.stop) { stopped = true; break; }
+        attempts++;
+        if (attempts > 3) { fail++; toast(`[${n}/${total}] ${name} 节流重试超限，跳过`, true); done = true; }
+        continue;
+      }
+
+      if (j?.code === 'PREFLIGHT_BLOCKED' || j?.code === 'SHOP_BLOCKED' || j?.code === 'EXCLUDED') {
+        skipped++;
+        const why = j.code === 'SHOP_BLOCKED' ? '目标店铺不可用' : j.code === 'EXCLUDED' ? '已永久排除' : '体检未通过';
+        toast(`[${n}/${total}] ⛔ ${name} ${why}，已跳过`, true);
+        done = true;
+        break;
+      }
+
+      fail++;
+      toast(`[${n}/${total}] ${name} 失败：${j?.error || '未知错误'}`, true);
+      done = true;
+    }
+  }
+
+  PUB_BATCH.running = false;
+  await refreshGuard();
+  await load();
+  toast(
+    `批量发布${stopped ? '已停止' : '结束'}：成功 ${ok}，跳过（体检拦截/店铺不可用/已排除）${skipped}，失败 ${fail}`,
+    fail > 0 || skipped > 0,
+  );
+}
+
+/** 整个待发布队列（等价于原来的「按顺序发布全部」） */
+async function publishAll() {
+  const ready = PUB.resources.filter((r) => r.status === 'ready' && r.draft_code);
+  if (!ready.length) { toast('没有可发布的项（待发布队列为空）', true); return; }
+  await publishList(ready, '待发布队列里全部');
+}
+
+/* ============================ 上架体检视图 ============================ */
+
+function renderPreflight() {
+  if (!PUB) return;
+  const st = PUB.stats || {};
+  const box = document.getElementById('pfStats');
+  if (box) {
+    box.innerHTML = [
+      ['待发布', st.ready ?? 0, ''],
+      ['⛔ 违规（已拦）', st.preflight_blocked ?? 0, 'red'],
+      ['⚠️ 疑似待确认', st.preflight_warned ?? 0, 'amber'],
+      ['未体检', st.preflight_unknown ?? 0, ''],
+    ].map(([k, v, cls]) => `<div class="stat"><div class="k">${k}</div><div class="v ${cls}">${v}</div></div>`).join('');
+  }
+  const scope = document.getElementById('pfScope');
+  if (scope) {
+    const todos = PUB.resources.filter((r) => r.draft_code && r.status !== 'published');
+    const imgs = todos.reduce((s, r) => s + ((r.cover_images || []).length), 0);
+    scope.innerHTML = `<div style="padding:12px 15px;font-size:13px">
+      默认范围：<b>待发布队列 ${todos.length} 个草稿</b>（含 ${imgs} 张图片）。
+      ${PUB.preflight_at ? `<span class="muted">上次体检：${esc(PUB.preflight_at.slice(0, 19).replace('T', ' '))}</span>` : '<span class="muted">还没有体检记录</span>'}
+      <div class="muted" style="margin-top:5px;font-size:12.5px">
+        「扫文字」很快（秒级）；「扫文字 + 图片」要下载并 OCR 每张图，首次较慢，之后走缓存。
+      </div>
+    </div>`;
+  }
+
+  const n = (PUB.stats?.preflight_blocked ?? 0);
+  const badge = document.getElementById('pfBadge');
+  if (badge) { badge.textContent = n; badge.classList.toggle('hidden', n === 0); }
+
+  const list = PUB.resources.filter((r) => r.draft_code && (r.preflight || r.status !== 'published'));
+  document.getElementById('pfCnt').textContent = `${list.length} 个`;
+  const box2 = document.getElementById('pfBox');
+  const withResult = list.filter((r) => r.preflight);
+  const noResult = list.filter((r) => !r.preflight);
+  if (!withResult.length) {
+    box2.innerHTML = `<div class="empty">还没有体检结论。点上面的「扫文字（快）」先跑一遍。</div>`;
+  } else {
+    box2.innerHTML = withResult.map((r) => {
+      const p = r.preflight;
+      const cls = p.blocked ? 'block' : p.warned ? 'warn' : '';
+      const icon = p.blocked ? '⛔' : p.warned ? '⚠️' : '✅';
+      const items = [...(p.block || []), ...(p.warn || [])];
+      return `<div class="pf ${cls}">
+        <div class="pfi">${icon}</div>
+        <div class="pfb">
+          <div class="pft">${esc(r.display_name || r.name)}
+            <span class="muted" style="font-weight:400;font-size:12px">
+              ${esc(r.draft_code)}　${p.with_images ? '含图片' : '仅文字'}　${esc(String(p.at || '').slice(0, 19).replace('T', ' '))}
+              ${p.images ? `　${p.images} 张图` : ''}
+            </span></div>
+          ${items.length
+            ? `<div class="pfd">${items.map((x) => esc(String(x))).join('\n')}</div>`
+            : `<div class="pfd muted">未发现问题，可以发布。</div>`}
+          <div style="margin-top:7px">
+            <button class="btn tiny" onclick="checkOneDraft('${esc(r.draft_code)}')">重扫这一个</button>
+            <button class="btn tiny" onclick="openDraft('${esc(r.draft_code)}')">去改草稿</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  if (noResult.length) {
+    box2.innerHTML += `<div class="card" style="margin-top:10px"><div style="padding:11px 15px;font-size:12.5px" class="muted">
+      另有 ${noResult.length} 个待发布草稿还没有体检结论：${noResult.slice(0, 6).map((r) => esc(r.draft_code)).join('、')}${noResult.length > 6 ? ' …' : ''}
+    </div></div>`;
+  }
+}
+
+async function runPreflight(withImages) {
+  const btnTxt = withImages ? '扫文字 + 图片' : '扫文字';
+  toast(`正在体检（${btnTxt}）…首次可能要几分钟`);
+  const j = await papiQuiet('preflight.check', { images: withImages });
+  if (!j?.ok) { toast(j?.error || '体检失败', true); await load(); renderPreflight(); return; }
+  toast(j.message || '体检完成');
+  await load();
+  renderPreflight();
+}
+
+async function checkOneDraft(code) {
+  toast(`正在重扫 ${code} …`);
+  const j = await papiQuiet('preflight.check', { codes: [code], images: true });
+  if (!j?.ok) { toast(j?.error || '体检失败', true); return; }
+  const r = (j.results || [])[0];
+  toast(r && r.block.length ? `${code}：发现 ${r.block.length} 项违规` : `${code}：未发现问题`, !!(r && r.block.length));
+  await load();
+  renderPreflight();
+}
+
+/* ---------------------------- 违禁词表 ---------------------------- */
+
+let BANNED = null;
+async function loadBannedWords() {
+  if (BANNED) return;
+  const j = await fetch('/api/banned-words', { cache: 'no-store' }).then((r) => r.json()).catch(() => null);
+  BANNED = j && j.ok ? j : null;
+  renderBannedWords();
+}
+
+function renderBannedWords() {
+  const box = document.getElementById('bwBox');
+  if (!box) return;
+  if (!BANNED) { box.innerHTML = '<div class="empty">词表加载失败。</div>'; return; }
+  const { text, image } = BANNED;
+  const rows = [
+    ...(text.block || []).map((r) => ({ w: r.pattern, d: r.why, lvl: '硬拦截' })),
+    ...(text.warn || []).map((r) => ({ w: r.pattern, d: r.why, lvl: '疑似' })),
+  ];
+  document.getElementById('bwCnt').textContent = `${rows.length} 条规则 + 图内文字 ${(image.ocr_tokens || []).length} 个 token`;
+  box.innerHTML =
+    `<div class="bw" style="background:#FAFBFC;font-weight:600;color:var(--t2)">
+      <span class="w" style="visibility:hidden">x</span><span class="d">说明</span><span style="flex:0 0 52px;text-align:right">级别</span></div>` +
+    rows.map((r) => `<div class="bw">
+      <span class="w ${r.lvl === '疑似' ? 'wn' : ''}">${esc(r.w)}</span>
+      <span class="d">${esc(r.d)}</span>
+      <span class="muted" style="flex:0 0 52px;text-align:right;font-size:11.5px">${r.lvl}</span>
+    </div>`).join('') +
+    `<div class="bw" style="background:#FAFBFC"><span class="w">图内文字</span>
+      <span class="d">${(image.ocr_tokens || []).map((t) => esc(t)).join(' / ')} —— 图片 OCR 命中即拦截</span>
+      <span class="muted" style="flex:0 0 52px;text-align:right;font-size:11.5px">硬拦截</span></div>` +
+    `<div class="bw" style="background:#FAFBFC"><span class="w wn">图片内容</span>
+      <span class="d">分类标签：${(image.risky_labels || []).map((t) => esc(t)).join(' / ')}；肤色占比阈值 ${image.skinRatioWarn} / ${image.skinCenterWarn}</span>
+      <span class="muted" style="flex:0 0 52px;text-align:right;font-size:11.5px">疑似</span></div>`;
+}
+
+function openBannedWords() {
+  toast('词表文件：assets/_shared/banned-words.json（编辑后点「刷新」生效）');
+}
+
+async function syncOne(code) {
+  const j = await papi('publish.sync', { code });
+  if (j?.ok) toast(j.message);
+}
+
+// -------------------------------------------------- 弹层
+
+function closeModal() {
+  document.getElementById('modalBg').classList.add('hidden');
+  MODAL = { type: null, goodsNo: null };
+}
+
+function openModal(html) {
+  document.getElementById('modal').innerHTML = html;
+  document.getElementById('modalBg').classList.remove('hidden');
+}
+
+function openCards(goodsNo) {
+  const g = STATE.goods.find((x) => x.goods_no === goodsNo);
+  const pool = STATE.cards[goodsNo] || [];
+  MODAL = { type: 'cards', goodsNo };
+  const sharedHint = g.stock_mode === 'shared'
+    ? `<div class="warnbox">这个商品是<b>一链多发</b>模式，所有买家收到的都是<b>第 1 条</b>内容，其余条目不会对外发出。</div>`
+    : `<div class="warnbox">这个商品是<b>一单一链</b>模式：每来一单按顺序发出 1 条，发完自动下架。</div>`;
+  const rows = pool.map((c, i) => `<div class="crow ${c.used ? 'used' : ''} ${g.stock_mode === 'shared' && i === 0 ? 'primary-frame' : ''}">
+    <div class="crow-hd">
+      <span>#${i + 1}　${c.used ? `<span class="pill p-pend">已发出</span> ${esc(c.order_no || '')} ${timeStr(c.used_at)}` : '<span class="pill p-ok">未使用</span>'}
+      ${g.stock_mode === 'shared' && i === 0 ? '<span class="pill p-shared">实际对外发出</span>' : ''}
+      ${isPlaceholder(c.card_pwd) ? '<span class="pill p-warn">占位内容</span>' : ''}</span>
+      <span class="acts">
+        <button class="btn tiny" onclick="copyCard(${i})">复制</button>
+        <button class="btn tiny" onclick="saveCard(${i})">保存</button>
+        ${c.used ? '' : `<button class="btn tiny danger" onclick="removeCard(${i})">删除</button>`}
+      </span>
+    </div>
+    <textarea id="card-${i}">${esc(c.card_pwd)}</textarea>
+  </div>`).join('');
+  openModal(`
+    <div class="modal-hd"><h3>${esc(g.goods_name)}</h3>
+      <span class="acts"><span class="gno" style="color:var(--t3)">${esc(goodsNo)}</span>
+      <button class="btn tiny" onclick="closeModal()">关闭</button></span></div>
+    <div class="modal-bd">
+      ${sharedHint}
+      ${rows || '<div class="empty">还没有内容。用下面的输入框加一条。</div>'}
+      <div class="field" style="margin-top:16px">
+        <label>新增一条交付内容</label>
+        <textarea id="card-new" placeholder="把网盘分享链接 + 提取码 + 使用说明粘贴进来"></textarea>
+        <div class="hint">一链多发模式下只用第 1 条，所以真实链接请放在第 1 条。</div>
+      </div>
+      <div class="acts"><button class="btn primary" onclick="addCard()">添加</button></div>
+    </div>`);
+}
+
+window.copyCard = async (i) => {
+  const v = document.getElementById('card-' + i).value;
+  try { await navigator.clipboard.writeText(v); toast('已复制到剪贴板'); }
+  catch { const t = document.getElementById('card-' + i); t.select(); document.execCommand('copy'); toast('已复制'); }
+};
+window.saveCard = (i) => {
+  const v = document.getElementById('card-' + i).value;
+  if (!window.confirm('确认替换这一条的内容？\n\n如果这条已经发给过买家，订单台账里的记录不会跟着变。')) return;
+  api(`/api/goods/${encodeURIComponent(MODAL.goodsNo)}/cards/update/${i}`, { card_pwd: v, force: true }).then(() => openCards(MODAL.goodsNo));
+};
+window.removeCard = (i) => {
+  if (!window.confirm('确认删除这条内容？')) return;
+  api(`/api/goods/${encodeURIComponent(MODAL.goodsNo)}/cards/remove/${i}`).then(() => openCards(MODAL.goodsNo));
+};
+window.addCard = () => {
+  const v = document.getElementById('card-new').value.trim();
+  if (!v) { toast('内容不能为空', true); return; }
+  api(`/api/goods/${encodeURIComponent(MODAL.goodsNo)}/cards/add`, { card_pwd: v }).then(() => openCards(MODAL.goodsNo));
+};
+
+window.openPrice = (goodsNo) => {
+  const g = STATE.goods.find((x) => x.goods_no === goodsNo);
+  MODAL = { type: 'price', goodsNo };
+  openModal(`
+    <div class="modal-hd"><h3>改价 · ${esc(g.goods_name)}</h3><button class="btn tiny" onclick="closeModal()">关闭</button></div>
+    <div class="modal-bd">
+      <div class="field">
+        <label>成本价（分）</label>
+        <input id="f-price" type="number" min="0" step="1" value="${g.price}" style="width:180px">
+        <div class="hint">当前 ${fen2yuan(g.price)}。单位是<b>分</b>：990 = ¥9.90。<br>
+        这是「商家可接受的成本上限」——闲管家下单时传的 <code>max_amount</code> 低于它会报 1202，所以留点余量。</div>
+      </div>
+      <div class="acts"><button class="btn primary" onclick="savePrice()">保存</button></div>
+    </div>`);
+};
+window.savePrice = () => {
+  const v = Number(document.getElementById('f-price').value);
+  api(`/api/goods/${encodeURIComponent(MODAL.goodsNo)}/price`, { price: v }).then(() => closeModal());
+};
+
+window.toggleStatus = (goodsNo, status) => {
+  const g = STATE.goods.find((x) => x.goods_no === goodsNo);
+  if (!window.confirm(`${status === 1 ? '上架' : '下架'}「${g.goods_name}」？`)) return;
+  api(`/api/goods/${encodeURIComponent(goodsNo)}/status`, { status });
+};
+
+window.openCreate = () => {
+  MODAL = { type: 'create', goodsNo: null };
+  openModal(`
+    <div class="modal-hd"><h3>新建货源商品</h3><button class="btn tiny" onclick="closeModal()">关闭</button></div>
+    <div class="modal-bd">
+      <div class="row2">
+        <div class="field"><label>商品编码</label><input id="f-no" placeholder="如 BD-XXX-001"><div class="hint">闲管家按编码精准匹配</div></div>
+        <div class="field"><label>成本价（分）</label><input id="f-price" type="number" min="0" step="1" value="500"><div class="hint">500 = ¥5.00</div></div>
+      </div>
+      <div class="field"><label>商品名称</label><input id="f-name" placeholder="买家在管家后台看到的名称"></div>
+      <div class="row2">
+        <div class="field"><label>库存模式</label>
+          <select id="f-mode"><option value="shared">一链多发（推荐：一条链接发给所有买家）</option><option value="pool">一单一链（每条只发一次）</option></select>
+        </div>
+        <div class="field"><label>一链多发的展示库存</label><input id="f-ss" type="number" min="1" value="9999"></div>
+      </div>
+      <div class="field"><label>交付内容</label>
+        <textarea id="f-card" placeholder="网盘分享链接 + 提取码 + 使用说明"></textarea>
+        <div class="hint">先建成商品，之后可在「管理内容」里继续替换。新建后建议再回闲管家后台把它关联到卡密仓库。</div>
+      </div>
+      <div class="acts"><button class="btn primary" onclick="doCreate()">创建</button></div>
+    </div>`);
+};
+window.doCreate = () => {
+  api('/api/goods/create', {
+    goods_no: document.getElementById('f-no').value.trim(),
+    goods_name: document.getElementById('f-name').value.trim(),
+    price: Number(document.getElementById('f-price').value),
+    stock_mode: document.getElementById('f-mode').value,
+    shared_stock: Number(document.getElementById('f-ss').value),
+    card_pwd: document.getElementById('f-card').value.trim(),
+  }).then((r) => { if (r) closeModal(); });
+};
+
+// -------------------------------------------------- 启动
+
+load();
+setInterval(() => { if (document.getElementById('auto').checked) load(); }, 15000);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+// 支持 #publish / #preflight / #source 直接打开某个标签页（便于收藏、排障、截图）
+function viewFromHash() {
+  const v = (location.hash || '').replace(/^#/, '');
+  return ['source', 'publish', 'preflight'].includes(v) ? v : 'source';
+}
+window.addEventListener('hashchange', () => switchView(viewFromHash()));
+switchView(viewFromHash());
+</script>
+</body>
+</html>

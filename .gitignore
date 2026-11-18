@@ -1,0 +1,52 @@
+node_modules/
+dist/
+out/
+.env
+.env.local
+.tokens.json
+*.log
+.DS_Store
+
+# 网关运行时数据：含真实卡密（网盘分享链接）与订单台账，绝不入库
+packages/xgj-gateway/data/
+
+# 夸克 Skill 整理任务记录（含撤回记录，保留 30 天，不入库）
+organize-*/
+
+# 上架台账：code → 闲管家 product_id，属运行时状态，不入库
+drafts/.listings.json
+
+# 采集产物：体积大且可重新生成（封面图、渲染产物、抓取缓存、目录索引）
+assets/*/covers/
+assets/*/covers-clean/
+assets/*/out/
+assets/*/data/
+assets/*/index.html
+assets/*/resources.csv
+assets/*/watermark-lab/
+assets/goods/
+
+# 其它
+__pycache__/
+*.tsbuildinfo
+
+# 隧道看门狗的运行时状态（记录当前地址，用于检测是否变更）
+out/tunnel-state.json
+
+# 上架前体检的图片与扫描缓存（几百 MB，可再生）
+out/.preflight/
+out/bin/
+
+# 免费/开源软件的官方安装包（体积大，可重新下载）
+assets/free-software/downloads/
+
+# GitHub 体检缓存（gh:audit）
+.cache/
+
+# ── 2026-11-18 推送 xuyu-copilot 前收紧：运营/记忆/资源数据不入库 ──
+.workbuddy/
+drafts/
+assets/
+out/
+docs/虚拟货源自动发货-接入手册.html
+netdisk-site/media/

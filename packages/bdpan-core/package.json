@@ -1,0 +1,16 @@
+{
+  "name": "@bdpan/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "auth": "tsx src/cli/auth.ts",
+    "probe": "tsx src/cli/probe.ts",
+    "whoami": "tsx src/cli/whoami.ts",
+    "scan": "tsx src/cli/scan.ts"
+  }
+}

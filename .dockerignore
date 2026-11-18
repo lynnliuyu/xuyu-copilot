@@ -1,0 +1,30 @@
+# 绝不进镜像的内容
+node_modules
+**/node_modules
+
+# 构建产物
+out
+packages/out
+dist
+**/dist
+
+# 密钥与令牌
+.env
+.env.local
+.tokens.json
+
+# 运行时数据：含真实卡密（网盘分享链接）与订单台账，由 compose 卷挂载，不进镜像
+packages/xgj-gateway/data
+
+# 与镜像无关的项目内容
+.git
+.gitignore
+.workbuddy
+docs
+drafts
+*.log
+.DS_Store
+
+# ⚠️ scripts/ 不在排除列表里 —— 镜像要 COPY 它：
+#    · 隧道（tunnel-ssh.mjs）与微信回复服务本身就是 scripts/ 下的 .mjs
+#    · 运营台运行时会动态 import scripts/lib/preflight.mjs（体检规则只留一份）

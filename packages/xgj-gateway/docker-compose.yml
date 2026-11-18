@@ -1,0 +1,67 @@
+# 闲管家「虚拟货源」网关 —— 独立部署
+#
+# 三个命令：
+#   cp .env.example .env   &&   改里面的四个值
+#   docker compose up -d --build
+#   docker compose logs -f gateway
+#
+# 起来之后把这个服务**公网可达**的地址，填到
+# 闲管家 → 我的应用 → 货源授权信息 → 接口网关。
+#
+# ⚠️ 闲管家点「上线」的瞬间就会来请求 查询平台信息 + 查询商户信息，
+#    所以必须**先让本服务公网可达，再去点上线**。
+
+name: xgj-gateway
+
+services:
+  gateway:
+    build:
+      context: .
+      args:
+        # 本机拉不动 Docker Hub 时改成 node:22-slim
+        NODE_IMAGE: ${NODE_IMAGE:-node:22-alpine}
+    image: xgj-gateway:local
+    container_name: xgj-gateway
+    restart: unless-stopped
+    init: true
+
+    environment:
+      XGJ_PORT: "8787"
+      # 商户号 / 对接密钥：**由你自定义**，再填进闲管家「货源授权信息」
+      XGJ_MCH_ID: ${XGJ_MCH_ID:?请在 .env 设置 XGJ_MCH_ID}
+      XGJ_MCH_SECRET: ${XGJ_MCH_SECRET:?请在 .env 设置 XGJ_MCH_SECRET}
+      # 闲管家应用概况里的 AppKey / AppSecret，用于验签
+      GOOFISH_APP_KEY: ${GOOFISH_APP_KEY:?请在 .env 设置 GOOFISH_APP_KEY}
+      GOOFISH_APP_SECRET: ${GOOFISH_APP_SECRET:?请在 .env 设置 GOOFISH_APP_SECRET}
+      # ⚠️ 放在反向代理（Nginx/Caddy/Cloudflare）后面时必须保持 false：
+      #    X-Forwarded-For 可以伪造，开了白名单等于把安全判断交给攻击者。
+      XGJ_IP_WHITELIST: ${XGJ_IP_WHITELIST:-false}
+      XGJ_TIMESTAMP_TOLERANCE: ${XGJ_TIMESTAMP_TOLERANCE:-300}
+      # 日志里是否附请求体摘要（排查闲管家传参用；含 notify_url/token，介意可关）
+      XGJ_LOG_BODY: ${XGJ_LOG_BODY:-true}
+
+    volumes:
+      # 商品目录 / 卡密池 / 订单台账。具名卷也可以，但 bind mount 更便于备份与查看
+      - ./data:/data
+
+    ports:
+      # 只暴露端口，绑定地址交给防火墙/反代控制。
+      # 想看本机调试：XGJ_HOST_BIND=127.0.0.1
+      - "${XGJ_HOST_BIND:-0.0.0.0}:${XGJ_HOST_PORT:-8787}:8787"
+
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8787/__health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
