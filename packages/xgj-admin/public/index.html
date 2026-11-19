@@ -391,6 +391,10 @@ details .inner{padding:6px 0}
     <div class="node" data-view="source" onclick="switchView('source')">
       <span class="ni">📦</span><span class="nt">货源商品</span>
     </div>
+    <h4>排查</h4>
+    <div class="node" data-view="delivery" onclick="switchView('delivery')">
+      <span class="ni">📡</span><span class="nt">发货排查</span><span class="cnt hidden" id="dlBadge">0</span>
+    </div>
     <div class="side-meta" id="meta">加载中…</div>
   </aside>
 
@@ -508,6 +512,58 @@ details .inner{padding:6px 0}
       </h2>
       <div class="card" id="bwBox"></div>
     </div>
+
+    <!-- ==================== 视图：发货排查 ==================== -->
+    <div id="view-delivery" class="hidden">
+      <div id="dlAlerts"></div>
+      <div class="warnbox" style="margin-bottom:14px">
+        <b>这一页回答「为什么有的店能自动发货、有的不能」。</b>
+        数据只读：来自网关本地台账（catalog / 卡密池 / 订单）＋上架草稿归属；
+        商品侧发货设置（<code>kind_way=4</code> 等）只在目录下 <code>out/consign-facts.json</code>
+        （不入库）存在时显示，缺数据一律标「待核」而不是猜。
+      </div>
+
+      <div class="stats" id="dlStats"></div>
+
+      <h2>按店铺 <span class="cnt" id="dlShopCnt"></span></h2>
+      <div class="catbar" id="dlShopBar"></div>
+
+      <h2>商品 <span class="cnt" id="dlGoodsCnt"></span>
+        <span style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="loadDelivery(true)">刷新</button>
+        </span>
+      </h2>
+      <div class="qsearch">
+        <input id="dlSearch" placeholder="搜索：编号 / 名称 / 店铺…（空格分隔）"
+               oninput="setDlSearch(this.value)">
+        <select id="dlStatus" onchange="setDlStatus(this.value)">
+          <option value="">全部状态</option>
+          <option value="unknown">发货设置为待核</option>
+          <option value="inactive">发货设置未启用</option>
+          <option value="nocards">卡密池空/占位</option>
+          <option value="unmapped">未绑定店铺</option>
+          <option value="suspended">货源下架</option>
+        </select>
+        <select id="dlConsign" onchange="setDlConsign(this.value)">
+          <option value="">发货设置：全部</option>
+          <option value="active">已启用</option>
+          <option value="null">待核（缺数据）</option>
+          <option value="inactive">未启用</option>
+        </select>
+        <span class="muted" id="dlHint"></span>
+      </div>
+      <div class="card" id="dlBox"></div>
+
+      <h2>最近发货订单 <span class="cnt" id="dlOrdersCnt"></span></h2>
+      <div class="card" id="dlOrdersBox"></div>
+
+      <h2>卡点候选 <span class="cnt" id="dlCandCnt"></span></h2>
+      <div class="card" id="dlCandBox"></div>
+
+      <details style="margin-top:14px"><summary>取数错误 / 数据缺口（如实列出）</summary>
+        <div class="card" id="dlErrors" style="margin-top:8px"></div>
+      </details>
+    </div>
   </main>
 </div>
 
@@ -521,6 +577,12 @@ let STATE = null;
 let PUB = null;
 let VIEW = 'source';
 let MODAL = { type: null, goodsNo: null };
+/** 发货排查：快照 + 筛选 */
+let DL = null;
+let DL_SHOP = '';
+let DL_SEARCH = '';
+let DL_STATUS = '';
+let DL_CONSIGN = '';
 /** 类别筛选：'' = 全部 ｜ '__none__' = 未分类 ｜ 其他 = 类别 id */
 let CAT_FILTER = '';
 /** 队列/资源列表的搜索与状态筛选（742 个条目没有搜索根本没法操作） */
@@ -631,8 +693,10 @@ function switchView(v) {
   document.getElementById('view-source').classList.toggle('hidden', v !== 'source');
   document.getElementById('view-publish').classList.toggle('hidden', v !== 'publish');
   document.getElementById('view-preflight').classList.toggle('hidden', v !== 'preflight');
+  document.getElementById('view-delivery').classList.toggle('hidden', v !== 'delivery');
   if (v === 'preflight') { renderPreflight(); loadBannedWords(); }
   if (v === 'publish') startGuardTicker();
+  if (v === 'delivery' && !DL) loadDelivery(false);
   // 同步到 hash（用 replaceState，避免触发 hashchange 递归）
   try { if (location.hash !== '#' + v) history.replaceState(null, '', '#' + v); } catch (e) { /* file:// 下忽略 */ }
 }
@@ -1804,6 +1868,203 @@ async function checkOneDraft(code) {
 
 /* ---------------------------- 违禁词表 ---------------------------- */
 
+/* ============================================================
+   【发货排查】视图 —— 只读聚合 /api/delivery/state
+   ============================================================ */
+const DL_SHOP_LABEL = (d) => d.meta?.consignFactsInjected
+  ? '已注入 consign 事实' : '发货设置为待核（缺 out/consign-facts.json）';
+
+async function loadDelivery(force) {
+  try {
+    const j = await fetch('/api/delivery/state', { cache: 'no-store' }).then((r) => r.json());
+    if (j && j.goods) DL = j;
+  } catch (e) {
+    document.getElementById('dlAlerts').innerHTML =
+      `<div class="warnbox"><b>加载失败：</b>${esc(e.message || e)}</div>`;
+  }
+  renderDelivery();
+}
+
+function dlShopLabel(un) {
+  if (!un || un === '(未知)') return '(未知店铺)';
+  const s = (DL.shops || []).find((x) => x.user_name === un);
+  return s ? `${s.label}（${s.user_name}）` : String(un);
+}
+
+function dlFiltered() {
+  let list = (DL.goods || []).filter((g) => {
+    if (DL_SHOP && g.shop !== DL_SHOP) return false;
+    if (DL_CONSIGN === 'active' && g.consign_active !== true) return false;
+    if (DL_CONSIGN === 'inactive' && g.consign_active !== false) return false;
+    if (DL_CONSIGN === 'null' && g.consign_active !== null) return false;
+    const st = DL_STATUS;
+    if (st === 'unknown' && g.consign_active !== null) return false;
+    if (st === 'inactive' && g.consign_active !== false) return false;
+    if (st === 'nocards' && !(g.cards_free === 0 || g.placeholder)) return false;
+    if (st === 'unmapped' && g.shop) return false;
+    if (st === 'suspended' && g.on_shelf) return false;
+    return true;
+  });
+  if (DL_SEARCH) {
+    const ks = DL_SEARCH.toLowerCase().split(/\s+/).filter(Boolean);
+    list = list.filter((g) => {
+      const hay = `${g.goods_no} ${g.goods_name} ${g.shop || ''} ${dlShopLabel(g.shop)}`.toLowerCase();
+      return ks.every((k) => hay.includes(k));
+    });
+  }
+  return list;
+}
+
+function dlConsignPill(g) {
+  if (g.consign_active === true) return '<span class="pill p-ok">已启用</span>';
+  if (g.consign_active === false) return '<span class="pill p-fail">未启用</span>';
+  return '<span class="pill p-pend">待核</span>';
+}
+
+function renderDelivery() {
+  if (!DL) return;
+  const st = document.getElementById('dlStats');
+  const goods = DL.goods || [];
+  const byShop = DL.byShop || {};
+  const active = goods.filter((g) => g.consign_active === true).length;
+  const unknown = goods.filter((g) => g.consign_active === null).length;
+  const noCards = goods.filter((g) => g.cards_free === 0 || g.placeholder).length;
+  const bad = goods.filter((g) => g.cards_free === 0).length;
+  const suspended = goods.filter((g) => !g.on_shelf).length;
+  if (st) {
+    st.innerHTML = [
+      ['商品', goods.length, ''],
+      ['发货设置已启用', active, ''],
+      ['发货设置待核', unknown, unknown ? 'amber' : ''],
+      ['卡密池空/占位', noCards, noCards ? 'red' : ''],
+      ['货源下架', suspended, suspended ? 'amber' : ''],
+      ['订单（网关台账）', (DL.recentOrders || []).length, ''],
+    ].map(([k, v, cls]) => `<div class="stat"><div class="k">${esc(k)}</div><div class="v ${cls}">${esc(v)}</div></div>`).join('');
+  }
+
+  // 店铺筛选条
+  const bar = document.getElementById('dlShopBar');
+  const shopKeys = Object.keys(byShop);
+  const unknownShop = shopKeys.filter((k) => k === '(未知)').reduce((s, k) => s + (byShop[k]?.total ?? 0), 0);
+  if (bar) {
+    const chips = [
+      `<div class="catchip ${DL_SHOP === '' ? 'on' : ''}" onclick="setDlShop('')">全部 <span class="n">${goods.length}</span></div>`,
+      ...shopKeys.filter((k) => k !== '(未知)').map((k) => {
+        const s = byShop[k];
+        const unk = s.consignUnknown ?? 0;
+        return `<div class="catchip ${DL_SHOP === k ? 'on' : ''}" onclick="setDlShop('${esc(k)}')">
+          ${esc(dlShopLabel(k))} <span class="n">${s.total}</span>
+          ${unk ? `<span class="p">待核 ${unk}</span>` : ''}
+          ${s.recentOrders ? `<span class="p" style="color:var(--green)">订单 ${s.recentOrders}</span>` : ''}
+        </div>`;
+      }),
+      (unknownShop ? `<div class="catchip ${DL_SHOP === '(未知)' ? 'on' : ''}" onclick="setDlShop('(未知)')">未绑定店铺 <span class="n">${unknownShop}</span></div>` : ''),
+    ].filter(Boolean).join('');
+    bar.innerHTML = chips;
+    document.getElementById('dlShopCnt').textContent = `${shopKeys.length} 家`;
+  }
+
+  const list = dlFiltered();
+  document.getElementById('dlGoodsCnt').textContent =
+    (DL_SEARCH || DL_STATUS || DL_CONSIGN || DL_SHOP) ? `${list.length} / ${goods.length} 个` : `${goods.length} 个`;
+  const hint = document.getElementById('dlHint');
+  if (hint) hint.textContent = (DL_SEARCH || DL_STATUS || DL_CONSIGN || DL_SHOP) ? `命中 ${list.length} 个` : '';
+
+  const box = document.getElementById('dlBox');
+  if (!list.length) {
+    box.innerHTML = '<div class="empty">没有匹配的商品。</div>';
+  } else {
+    box.innerHTML = `<table>
+      <thead><tr><th>编号</th><th>名称</th><th>店铺</th><th>发货设置</th><th>模板</th>
+        <th>卡密</th><th>在架</th><th>最近订单</th><th>预检</th></tr></thead>
+      <tbody>${list.map((g) => {
+        const sub = g.placeholder ? '<span class="pill p-warn">占位</span>' : (g.cards_free === 0 ? '<span class="pill p-fail">卡空</span>' : '');
+        const last = g.last_order_no
+          ? `${g.last_order_no} · ${(g.last_order_at || '').slice(0, 16).replace('T', ' ')}`
+          : '<span class="muted">无</span>';
+        const kami = g.last_order_kami === null ? '<span class="muted">待核</span>'
+          : (g.last_order_kami > 0 ? '<span class="pill p-ok">已出卡</span>' : '<span class="pill p-pend">未出卡</span>');
+        return `<tr class="${g.on_shelf ? '' : 'off'}">
+          <td><div class="gno">${esc(g.goods_no)}</div>${g.product_id ? `<div class="muted" style="font-size:11px">pid ${g.product_id}</div>` : ''}</td>
+          <td><div class="gname">${esc(g.goods_name)}</div>${g.consign_note ? `<div class="muted" style="font-size:11.5px">${esc(g.consign_note)}</div>` : ''}</td>
+          <td>${esc(dlShopLabel(g.shop))}</td>
+          <td>${dlConsignPill(g)}</td>
+          <td>${g.template_id ? `<span class="gno">${g.template_id}</span>` : '<span class="muted">—</span>'}</td>
+          <td>${g.cards_free}<div class="muted" style="font-size:11.5px">可用 ${g.cards_free} / 共 ${g.cards_total}</div>${sub}</td>
+          <td>${g.on_shelf ? '<span class="pill p-on">在架</span>' : '<span class="pill p-off">下架</span>'}</td>
+          <td><div>${last}</div>${kami}</td>
+          <td><button class="btn tiny" onclick="dlPreflight('${esc(g.goods_no)}')">预检</button></td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+  }
+
+  // 最近订单
+  const ob = document.getElementById('dlOrdersBox');
+  const os = DL.recentOrders || [];
+  document.getElementById('dlOrdersCnt').textContent = `${os.length} 笔`;
+  ob.innerHTML = os.length
+    ? `<table><thead><tr><th>订单</th><th>商品</th><th>状态</th><th>金额</th><th>时间</th><th>店铺</th></tr></thead>
+       <tbody>${os.map((o) => `<tr>
+         <td><span class="gno">${esc(o.order_no)}</span></td>
+         <td><div class="gname">${esc(o.goods_no)}${o.goods_name ? `<div class="muted" style="font-size:11.5px">${esc(o.goods_name)}</div>` : ''}</div></td>
+         <td>${o.status === 20 ? '<span class="pill p-ok">成功</span>' : o.status === 10 ? '<span class="pill p-pend">处理中</span>' : '<span class="pill p-fail">失败</span>'}</td>
+         <td class="money">${fen2yuan(o.amount_fen)}</td>
+         <td>${esc((o.at || '').slice(0, 16).replace('T', ' '))}</td>
+         <td>${esc(dlShopLabel(o.shop))}</td></tr>`).join('')}</tbody></table>`
+    : '<div class="empty">网关台账里还没有订单。</div>';
+
+  // 卡点候选
+  const cb = document.getElementById('dlCandBox');
+  const cands = DL.candidates || [];
+  document.getElementById('dlCandCnt').textContent = `${cands.length} 个`;
+  cb.innerHTML = cands.length
+    ? `<table><thead><tr><th>编号</th><th>店铺</th><th>原因</th></tr></thead>
+       <tbody>${cands.slice(0, 200).map((c) => `<tr><td><span class="gno">${esc(c.goods_no)}</span></td>
+         <td>${esc(dlShopLabel(c.shop))}</td><td>${esc(c.reason)}</td></tr>`).join('')}</tbody></table>`
+    : '<div class="empty">没有命中卡点条件。</div>';
+
+  // 取数错误
+  const eb = document.getElementById('dlErrors');
+  const errs = DL.errors || [];
+  eb.innerHTML = errs.length
+    ? `<table><thead><tr><th>来源</th><th>信息</th></tr></thead><tbody>
+       ${errs.map((e) => `<tr><td>${esc(e.source)}</td><td>${esc(e.message)}</td></tr>`).join('')}</tbody></table>`
+    : `<div style="padding:12px 15px" class="muted">本次聚合无取数错误。
+       注意：网关台账只覆盖「虚拟货源回调」路径；进销存订单与 order/kam 需外网只读查询（未接通时标待核，不算错误）。</div>`;
+
+  // 侧栏角标 = 待核数
+  const badge = document.getElementById('dlBadge');
+  if (badge) { badge.textContent = unknown; badge.classList.toggle('hidden', unknown === 0); }
+}
+
+function setDlShop(v) { DL_SHOP = v || ''; renderDelivery(); }
+function setDlSearch(v) { DL_SEARCH = v || ''; renderDelivery(); }
+function setDlStatus(v) { DL_STATUS = v || ''; renderDelivery(); }
+function setDlConsign(v) { DL_CONSIGN = v || ''; renderDelivery(); }
+
+async function dlPreflight(goodsNo) {
+  const box = document.getElementById('modal');
+  openModal(`<div class="modal-hd"><h3>预检 ${esc(goodsNo)}</h3>
+    <span class="acts"><button class="btn tiny" onclick="closeModal()">关闭</button></span></div>
+    <div class="modal-bd"><div class="muted">正在本地预检（只读，不联网）…</div></div>`);
+  try {
+    const j = await fetch('/api/delivery/preflight/' + encodeURIComponent(goodsNo), { cache: 'no-store' }).then((r) => r.json());
+    const issues = (j && j.issues) || [];
+    openModal(`<div class="modal-hd"><h3>预检 ${esc(goodsNo)}</h3>
+      <span class="acts"><button class="btn tiny" onclick="closeModal()">关闭</button></span></div>
+      <div class="modal-bd">
+        ${issues.length ? issues.map((i) => `<div class="issue i-${i.level === 'blocker' ? 'blocker' : i.level === 'warn' ? 'warn' : 'info'}">
+          <b>${esc(i.field)}</b>　${esc(i.message)}</div>`).join('')
+        : '<div class="i-ok issue"><b>通过</b>　本地预检未发现问题。</div>'}
+        <div class="muted" style="margin-top:10px;font-size:12px">预检时间：${esc((j && j.at || '').slice(0, 19).replace('T', ' '))}。只读本地检查，未调用任何写接口。</div>
+      </div>`);
+  } catch (e) {
+    openModal(`<div class="modal-hd"><h3>预检 ${esc(goodsNo)}</h3>
+      <span class="acts"><button class="btn tiny" onclick="closeModal()">关闭</button></span></div>
+      <div class="modal-bd"><div class="issue i-blocker"><b>失败</b>　${esc(e.message || e)}</div></div>`);
+  }
+}
+
 let BANNED = null;
 async function loadBannedWords() {
   if (BANNED) return;
@@ -1981,10 +2242,10 @@ load();
 setInterval(() => { if (document.getElementById('auto').checked) load(); }, 15000);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
-// 支持 #publish / #preflight / #source 直接打开某个标签页（便于收藏、排障、截图）
+// 支持 #publish / #preflight / #source / #delivery 直接打开某个标签页（便于收藏、排障、截图）
 function viewFromHash() {
   const v = (location.hash || '').replace(/^#/, '');
-  return ['source', 'publish', 'preflight'].includes(v) ? v : 'publish';
+  return ['source', 'publish', 'preflight', 'delivery'].includes(v) ? v : 'publish';
 }
 window.addEventListener('hashchange', () => switchView(viewFromHash()));
 switchView(viewFromHash());

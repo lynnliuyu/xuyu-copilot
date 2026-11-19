@@ -54,6 +54,7 @@ import { renderCard } from './card-render';
 import { specFor } from './card-spec';
 import { uploadImage, mediaReady, pingMedia } from './media';
 import { validateDraft, normalizeDraft, type ProductDraft } from '../../goofish-adapter/src/draft';
+import { deliverySnapshot, deliveryPreflight, type ConsignFacts } from './delivery';
 import { runListingAction, XgjWriteError } from '../../goofish-adapter/src/listing';
 import { getProduct } from '../../goofish-adapter/src/api';
 import {
@@ -91,6 +92,27 @@ const PORT = Number(process.env.ADMIN_PORT ?? 8790) || 8790;
  *    对外仍然只暴露在 127.0.0.1（见 docker-compose.yml 的 ports）。
  */
 const HOST = process.env.ADMIN_HOST || '127.0.0.1';
+
+/* ------------------------------------------------------------------ 发货排查（只读）
+ * /api/delivery/state      —— 聚合：店铺/商品筛选 + 配置状态 + 库存 + 模板 + 最近发货 + 取数错误
+ * /api/delivery/preflight  —— 单商品本地预检（不联网、不写）
+ *
+ * consign 事实（商品侧发货设置是否启用）来自授权只读产物：
+ *   可选文件 <repo>/out/consign-facts.json（gitignore 内，不入库）：
+ *     { "byProduct": { "<product_id>": { "active": true, "kind_way": 4, "template_id": 178…, "at": "…" } } }
+ *   无该文件时 consign_active=null，前端如实显示「缺数据」而非编造结论。
+ */
+function loadConsignFacts(): ConsignFacts {
+  try {
+    const p = path.resolve(HERE, '..', '..', '..', 'out', 'consign-facts.json');
+    if (!fs.existsSync(p)) return { byProduct: {} };
+    const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+    if (raw && typeof raw.byProduct === 'object' && !Array.isArray(raw.byProduct)) return raw as ConsignFacts;
+    return { byProduct: {} };
+  } catch {
+    return { byProduct: {} };
+  }
+}
 
 /* ------------------------------------------------------------------ 店铺状态
  * 为什么需要：2026-10-09 实例 —— 用户要求把 DiPlay 发到「顺和服饰平价超市」，
@@ -1134,6 +1156,22 @@ const server = http.createServer(async (req, res) => {
     // 上架流水线快照
     if (req.method === 'GET' && url.pathname === '/api/publish/state') {
       sendJson(res, 200, publishSnapshot());
+      return;
+    }
+
+    // 发货排查快照（只读聚合）。把 SHOPS 与 dataDir 注入进快照，前端无需另一份对照。
+    if (req.method === 'GET' && url.pathname === '/api/delivery/state') {
+      const snap = deliverySnapshot(loadConsignFacts());
+      snap.meta.dataDir = dataDir();
+      snap.shops = SHOPS.map((s) => ({ ...s }));
+      sendJson(res, 200, snap);
+      return;
+    }
+
+    // 单商品本地预检（只读，不联网）。
+    if (req.method === 'GET' && url.pathname.startsWith('/api/delivery/preflight/')) {
+      const goodsNo = decodeURIComponent(url.pathname.slice('/api/delivery/preflight/'.length));
+      sendJson(res, 200, deliveryPreflight(goodsNo));
       return;
     }
 
