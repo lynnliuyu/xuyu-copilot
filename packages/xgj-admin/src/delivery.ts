@@ -100,12 +100,12 @@ export function deliverySnapshot(consign: ConsignFacts = { byProduct: {} }): Del
   const shopByGoods = goodsShopIndex();
   const listings = loadListings();
 
-  const ordersByGoods = new Map<string, { order_no: string; status: number; amount: number; at: number }[]>();
+  const ordersByGoods = new Map<string, { order_no: string; status: number; amount: number; at: number; kami: number }[]>();
   for (const o of Object.values(orders)) {
     const g = o.goods_no ?? '';
     if (!g) continue;
     const arr = ordersByGoods.get(g) ?? [];
-    arr.push({ order_no: o.order_no, status: o.order_status, amount: o.order_amount, at: o.order_time });
+    arr.push({ order_no: o.order_no, status: o.order_status, amount: o.order_amount, at: o.order_time, kami: (o.card_items ?? []).length });
     ordersByGoods.set(g, arr);
   }
 
@@ -139,7 +139,8 @@ export function deliverySnapshot(consign: ConsignFacts = { byProduct: {} }): Del
       last_order_no: last?.order_no ?? null,
       last_order_at: last ? new Date(last.at * 1000).toISOString() : null,
       last_order_status: last?.status ?? null,
-      last_order_kami: null, // order/kam 需外网只读；未接通时如实标缺
+      // 本地台账里 card_items 就是「是否已出卡」的硬证据（无外网依赖）
+      last_order_kami: last ? last.kami : null,
       updated_at: g.update_time ? new Date(g.update_time * 1000).toISOString() : '',
     };
   });
